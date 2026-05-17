@@ -1,0 +1,12 @@
+# ============================================================
+# SECURITY AREA  : ENVIRONMENT CONFIGURATION (.env)
+# FILE LOCATION  : .gitignore  (root folder)
+# ============================================================
+# Tells Git to NEVER upload .env to GitHub.
+# Your DB password and credentials stay local only.
+# ============================================================
+
+.env
+logs/
+.env 
+logs/*.log 
