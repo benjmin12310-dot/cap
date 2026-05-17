@@ -96,7 +96,8 @@ $modules = $conn->query("SELECT DISTINCT module FROM audit_logs WHERE module IS 
 
         <div class="card">
             <div class="card-body p-0">
-                <table class="table table-hover mb-0 table-sm">
+                <div class="table-responsive">
+<table class="table table-hover mb-0 table-sm">
                     <thead>
                         <tr>
                             <th>Date/Time</th>
