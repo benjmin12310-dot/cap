@@ -4413,3 +4413,191 @@ th.num {
         padding: 12px 8px;
     }
 }
+
+/* ============================================================
+   MOBILE OVERHAUL — full phone support
+   ============================================================ */
+
+/* ── Sidebar backdrop (tap outside to close on mobile) ───── */
+#sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 999;
+}
+#sidebar-backdrop.active { display: block; }
+
+/* ── Topbar mobile: shrink user text, hide logout label ──── */
+@media (max-width: 768px) {
+    .topbar-right > .topbar-user > span:first-of-type {
+        display: none; /* hide name text, keep avatar */
+    }
+    .btn-logout .nav-label,
+    .btn-logout span { display: none; }
+    .btn-logout { padding: 8px 10px; min-width: 0; }
+
+    /* Bigger touch targets for all icon buttons */
+    #sidebar-toggle,
+    #theme-toggle,
+    .notif-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* ── Table → Card layout on phones ──────────────────────── */
+@media (max-width: 640px) {
+
+    /* Wrapper: allow content to breathe, not clip it */
+    .mobile-card-table-wrap {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        border-radius: 0 !important;
+    }
+
+    /* Hide the <thead> */
+    .mobile-card-table thead { display: none !important; }
+
+    /* Each <tbody><tr> becomes a white card */
+    .mobile-card-table tbody tr {
+        display: block !important;
+        background: var(--white) !important;
+        border: var(--border) !important;
+        border-radius: 14px !important;
+        margin-bottom: 10px !important;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.06) !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        transition: box-shadow 0.15s !important;
+    }
+    .mobile-card-table tbody tr:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+    }
+
+    /* Each <td> becomes a labelled row inside the card */
+    .mobile-card-table tbody td {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        padding: 10px 14px !important;
+        border-bottom: 1px solid var(--gray-100) !important;
+        font-size: 0.83rem !important;
+        white-space: normal !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .mobile-card-table tbody td:last-child {
+        border-bottom: none !important;
+    }
+
+    /* data-label → left-hand label column */
+    .mobile-card-table tbody td[data-label]::before {
+        content: attr(data-label);
+        font-size: 0.67rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--gray-400);
+        min-width: 72px;
+        flex-shrink: 0;
+        padding-top: 3px;
+        line-height: 1.3;
+    }
+
+    /* Actions row: let buttons wrap naturally */
+    .mobile-card-table tbody td[data-label="Actions"] {
+        flex-wrap: wrap !important;
+    }
+    .mobile-card-table tbody td[data-label="Actions"]::before {
+        width: 100%;
+        margin-bottom: 6px;
+    }
+    .mobile-card-table tbody td[data-label="Actions"] > * {
+        flex-wrap: wrap;
+    }
+
+    /* Empty state: keep centred */
+    .mobile-card-table tbody td[colspan] {
+        display: table-cell !important;
+        text-align: center;
+    }
+    .mobile-card-table tbody tr:has(td[colspan]) {
+        display: table-row !important;
+        background: var(--white) !important;
+        border-radius: 14px !important;
+    }
+
+    /* Action buttons: make tappable */
+    .mobile-card-table a[style*="padding"],
+    .mobile-card-table button[style*="padding"] {
+        min-height: 36px;
+        display: inline-flex !important;
+        align-items: center;
+    }
+
+    /* Page header: stack on mobile */
+    .page-header-bar {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    .page-header-bar > div:last-child {
+        width: 100%;
+    }
+    .page-header-bar button,
+    .page-header-bar a[style*="inline-flex"] {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Filter bar: stack inputs */
+    .mobile-filter-bar {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    .mobile-filter-bar > * {
+        width: 100% !important;
+        flex: none !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+    .mobile-filter-bar select,
+    .mobile-filter-bar input {
+        width: 100% !important;
+    }
+
+    /* Status tabs: allow horizontal scroll on small phones */
+    .mobile-tab-bar {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-bottom: 4px !important;
+        gap: 6px !important;
+        scrollbar-width: none !important;
+    }
+    .mobile-tab-bar::-webkit-scrollbar { display: none; }
+    .mobile-tab-bar > a {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+    }
+
+    /* Notification panel: full-width on mobile */
+    .notif-panel {
+        width: calc(100vw - 28px) !important;
+        right: -14px !important;
+        left: auto !important;
+    }
+}
+
+/* Dark mode adjustments for cards */
+[data-theme="dark"] .mobile-card-table tbody tr {
+    background: var(--gray-100) !important;
+    border-color: var(--gray-300) !important;
+}
+[data-theme="dark"] .mobile-card-table tbody td {
+    border-bottom-color: var(--gray-300) !important;
+}
