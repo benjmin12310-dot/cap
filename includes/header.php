@@ -220,16 +220,31 @@ if (isset($conn) && (time() - $cache_time) > 30) {
         if (main) main.classList.add('expanded');
     }
 
+    window.closeMobileSidebar = function() {
+        sidebar.classList.remove('mobile-open');
+        var bd = document.getElementById('sidebar-backdrop');
+        if (bd) bd.classList.remove('active');
+    };
+
     toggle && toggle.addEventListener('click', function () {
         if (window.innerWidth <= 768) {
-            // Mobile: toggle the slide-in drawer
-            sidebar.classList.toggle('mobile-open');
+            // Mobile: toggle the slide-in drawer + backdrop
+            var isOpen = sidebar.classList.toggle('mobile-open');
+            var bd = document.getElementById('sidebar-backdrop');
+            if (bd) bd.classList.toggle('active', isOpen);
         } else {
             // Desktop: toggle the icon-only collapsed state
             sidebar.classList.toggle('collapsed');
             if (main) main.classList.toggle('expanded');
             localStorage.setItem('sidebar_collapsed', sidebar.classList.contains('collapsed'));
         }
+    });
+
+    // Close sidebar when navigating (mobile link tap)
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth > 768) return;
+        var link = e.target.closest('#sidebar a');
+        if (link) window.closeMobileSidebar();
     });
 })();
 
