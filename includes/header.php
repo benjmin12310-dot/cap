@@ -141,7 +141,7 @@ if (isset($conn) && (time() - $cache_time) > 30) {
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    width: 340px;
+    width: 300px;
     background: var(--white);
     border: var(--border);
     border-radius: 12px;
