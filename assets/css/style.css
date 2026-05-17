@@ -4344,3 +4344,72 @@ th.num {
     background: linear-gradient(90deg, #1a1f2b 25%, #242b3a 50%, #1a1f2b 75%);
     background-size: 200% 100%;
 }
+
+/* ============================================================
+   MOBILE IMPROVEMENTS (patched)
+   ============================================================ */
+
+/* Tablet (768px-992px): sidebar becomes overlay instead of pushing content */
+@media (min-width: 769px) and (max-width: 992px) {
+    #sidebar {
+        position: fixed;
+        transform: translateX(-100%);
+        z-index: 1000;
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    .main-content {
+        margin-left: 0 !important;
+    }
+}
+
+/* Tables: always scrollable on mobile */
+@media (max-width: 768px) {
+    .table-responsive {
+        -webkit-overflow-scrolling: touch;
+    }
+    /* Shrink table font/padding on small screens */
+    .table thead th,
+    .table tbody td {
+        font-size: 0.8rem;
+        padding: 8px 10px;
+        white-space: nowrap;
+    }
+    /* Card action buttons — stack vertically */
+    .card-actions,
+    .btn-group-actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+    /* Stat/summary cards — 2 per row on mobile */
+    .stats-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    /* Topbar — shrink title */
+    .page-title {
+        font-size: 1rem;
+    }
+    /* Drawer (edit panels) — full width on mobile */
+    .drawer-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    /* Forms inside drawers */
+    .drawer-panel .form-label {
+        font-size: 0.85rem;
+    }
+}
+
+/* Very small phones */
+@media (max-width: 400px) {
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+    .page-content {
+        padding: 12px 8px;
+    }
+}
