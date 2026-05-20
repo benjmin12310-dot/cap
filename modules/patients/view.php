@@ -62,7 +62,7 @@ $total_paid = array_sum(array_column($payments, 'amount_paid'));
                 <h5 class="mb-0"><?php echo htmlspecialchars($patient['first_name'] . ' ' . $patient['last_name']); ?></h5>
                 <small class="text-muted"><?php echo htmlspecialchars($patient['patient_code']); ?></small>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
                 <a href="edit.php?id=<?php echo $id; ?>" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-pencil"></i> Edit
                 </a>
@@ -199,8 +199,8 @@ $total_paid = array_sum(array_column($payments, 'amount_paid'));
                 <div class="card mb-4">
                     <div class="card-header">Recent Appointments</div>
                     <div class="card-body p-0">
-                        <div class="table-responsive">
-<table class="table table-sm table-hover mb-0">
+                        <div class="mobile-card-table-wrap">
+<table class="table table-sm table-hover mb-0 mobile-card-table">
                             <thead>
                                 <tr><th>Code</th><th>Service</th><th>Doctor</th><th>Date</th><th>Status</th></tr>
                             </thead>
@@ -210,11 +210,11 @@ $total_paid = array_sum(array_column($payments, 'amount_paid'));
                                 <?php else: ?>
                                     <?php foreach ($appointments as $a): ?>
                                     <tr>
-                                        <td><?php echo htmlspecialchars($a['appointment_code']); ?></td>
-                                        <td><?php echo htmlspecialchars($a['service_name'] ?? 'N/A'); ?></td>
-                                        <td><?php echo htmlspecialchars($a['doctor_name'] ?? '—'); ?></td>
-                                        <td><?php echo date('M d, Y', strtotime($a['appointment_date'])); ?></td>
-                                        <td>
+                                        <td data-label="Code"><?php echo htmlspecialchars($a['appointment_code']); ?></td>
+                                        <td data-label="Service"><?php echo htmlspecialchars($a['service_name'] ?? 'N/A'); ?></td>
+                                        <td data-label="Doctor"><?php echo htmlspecialchars($a['doctor_name'] ?? '—'); ?></td>
+                                        <td data-label="Date"><?php echo date('M d, Y', strtotime($a['appointment_date'])); ?></td>
+                                        <td data-label="Status">
                                             <span class="badge bg-<?php
                                                 echo match($a['status']) {
                                                     'pending'   => 'warning',
@@ -231,6 +231,7 @@ $total_paid = array_sum(array_column($payments, 'amount_paid'));
                                 <?php endif; ?>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
 
@@ -243,8 +244,8 @@ $total_paid = array_sum(array_column($payments, 'amount_paid'));
                         </a>
                     </div>
                     <div class="card-body p-0">
-                        <div class="table-responsive">
-<table class="table table-sm table-hover mb-0">
+                        <div class="mobile-card-table-wrap">
+<table class="table table-sm table-hover mb-0 mobile-card-table">
                             <thead>
                                 <tr><th>Service</th><th>Due</th><th>Paid</th><th>Method</th><th>Status</th><th>Date</th></tr>
                             </thead>
@@ -254,21 +255,22 @@ $total_paid = array_sum(array_column($payments, 'amount_paid'));
                                 <?php else: ?>
                                     <?php foreach ($payments as $py): ?>
                                     <tr>
-                                        <td><?php echo htmlspecialchars($py['service_name'] ?? 'N/A'); ?></td>
-                                        <td>₱<?php echo number_format($py['amount_due'], 2); ?></td>
-                                        <td>₱<?php echo number_format($py['amount_paid'], 2); ?></td>
-                                        <td><?php echo ucfirst($py['payment_method']); ?></td>
-                                        <td>
+                                        <td data-label="Service"><?php echo htmlspecialchars($py['service_name'] ?? 'N/A'); ?></td>
+                                        <td data-label="Due">₱<?php echo number_format($py['amount_due'], 2); ?></td>
+                                        <td data-label="Paid">₱<?php echo number_format($py['amount_paid'], 2); ?></td>
+                                        <td data-label="Method"><?php echo ucfirst($py['payment_method']); ?></td>
+                                        <td data-label="Status">
                                             <span class="badge bg-<?php echo match($py['payment_status']) { 'paid' => 'success', 'partial' => 'warning', default => 'danger' }; ?>">
                                                 <?php echo ucfirst($py['payment_status']); ?>
                                             </span>
                                         </td>
-                        <td><?php echo date('M d, Y', strtotime($py['created_at'])); ?></td>
+                                        <td data-label="Date"><?php echo date('M d, Y', strtotime($py['created_at'])); ?></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
 
