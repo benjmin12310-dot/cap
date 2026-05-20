@@ -85,8 +85,8 @@ $patients = $conn->query("
 
         <div class="card">
             <div class="card-body p-0">
-                <div class="table-responsive">
-<table class="table mb-0">
+                <div class="mobile-card-table-wrap">
+<table class="table mb-0 mobile-card-table">
                     <thead>
                         <tr>
                             <th>Code</th>
@@ -106,13 +106,13 @@ $patients = $conn->query("
                         <?php else: ?>
                             <?php foreach ($patients as $p): ?>
                             <tr>
-                                <td style="font-weight:600;color:var(--blue-500);font-size:0.8rem;"><?php echo htmlspecialchars($p['patient_code']); ?></td>
-                                <td style="font-weight:500;"><?php echo htmlspecialchars(ucwords(strtolower($p['last_name'])).', '.ucwords(strtolower($p['first_name']))); ?></td>
-                                <td><?php echo ucfirst($p['gender'] ?? '—'); ?></td>
-                                <td><?php echo htmlspecialchars($p['phone'] ?? '—'); ?></td>
-                                <td><span class="badge bg-primary"><?php echo $p['total_visits']; ?></span></td>
-                                <td style="font-size:0.8rem;color:var(--gray-500);"><?php echo date('M d, Y', strtotime($p['created_at'])); ?></td>
-                                <td>
+                                <td data-label="Code" style="font-weight:600;color:var(--blue-500);font-size:0.8rem;"><?php echo htmlspecialchars($p['patient_code']); ?></td>
+                                <td data-label="Name" style="font-weight:500;"><?php echo htmlspecialchars(ucwords(strtolower($p['last_name'])).', '.ucwords(strtolower($p['first_name']))); ?></td>
+                                <td data-label="Gender"><?php echo ucfirst($p['gender'] ?? '—'); ?></td>
+                                <td data-label="Phone"><?php echo htmlspecialchars($p['phone'] ?? '—'); ?></td>
+                                <td data-label="Visits"><span class="badge bg-primary"><?php echo $p['total_visits']; ?></span></td>
+                                <td data-label="Registered" style="font-size:0.8rem;color:var(--gray-500);"><?php echo date('M d, Y', strtotime($p['created_at'])); ?></td>
+                                <td data-label="Actions">
                                     <div style="display:flex;gap:6px;">
                                         <a href="view.php?id=<?php echo $p['id']; ?>" class="btn btn-sm btn-outline-info" title="View Patient">
                                             <i class="bi bi-eye"></i>
@@ -131,6 +131,7 @@ $patients = $conn->query("
                         <?php endif; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
 
