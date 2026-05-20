@@ -347,8 +347,8 @@ $collection_rate = $totals['total_due'] > 0
 
         <!-- Bills Table -->
         <div class="bill-table-wrap">
-            <div class="table-responsive">
-<table class="table mb-0">
+            <div class="mobile-card-table-wrap">
+<table class="table mb-0 mobile-card-table">
                 <thead>
                     <tr>
                         <th>Bill</th>
@@ -384,7 +384,7 @@ $collection_rate = $totals['total_due'] > 0
                         $m = $method_map[$b['payment_method']] ?? ['label'=>ucfirst($b['payment_method']),'class'=>''];
                     ?>
                     <tr>
-                        <td>
+                        <td data-label="Bill">
                             <div style="font-weight:700;color:var(--blue-500);font-size:0.78rem;font-family:'Sora',sans-serif;">
                                 <?php echo e($b['bill_code']); ?>
                             </div>
@@ -392,33 +392,33 @@ $collection_rate = $totals['total_due'] > 0
                             <div style="font-size:0.68rem;color:var(--gray-400);"><?php echo e($b['appointment_code']); ?></div>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Patient">
                             <div style="font-weight:600;font-size:0.85rem;"><?php echo e(ucwords(strtolower($b['patient_name']))); ?></div>
                             <div style="font-size:0.72rem;color:var(--gray-400);"><?php echo e($b['patient_code']); ?></div>
                         </td>
-                        <td style="font-size:0.82rem;color:var(--gray-600);"><?php echo e($b['service_name'] ?? '—'); ?></td>
-                        <td style="font-weight:600;font-size:0.85rem;">₱<?php echo number_format($b['amount_due'], 2); ?></td>
-                        <td style="color:var(--success);font-weight:700;font-size:0.85rem;">
+                        <td data-label="Service" style="font-size:0.82rem;color:var(--gray-600);"><?php echo e($b['service_name'] ?? '—'); ?></td>
+                        <td data-label="Amount Due" style="font-weight:600;font-size:0.85rem;">₱<?php echo number_format($b['amount_due'], 2); ?></td>
+                        <td data-label="Paid" style="color:var(--success);font-weight:700;font-size:0.85rem;">
                             ₱<?php echo number_format($b['amount_paid'], 2); ?>
                         </td>
-                        <td style="font-weight:700;font-size:0.85rem;color:<?php echo $balance > 0 ? 'var(--danger)' : 'var(--success)'; ?>;">
+                        <td data-label="Balance" style="font-weight:700;font-size:0.85rem;color:<?php echo $balance > 0 ? 'var(--danger)' : 'var(--success)'; ?>;">
                             <?php echo $balance > 0 ? '₱'.number_format($balance,2) : '✓ Settled'; ?>
                         </td>
-                        <td>
+                        <td data-label="Method">
                             <span class="method-badge <?php echo $m['class']; ?>">
                                 <?php echo $m['label']; ?>
                             </span>
                         </td>
-                        <td>
+                        <td data-label="Status">
                             <span class="status-pill <?php echo $b['status']; ?>">
                                 <?php if ($b['status'] === 'paid'): ?>✓<?php elseif ($b['status'] === 'unpaid'): ?>✗<?php else: ?>◑<?php endif; ?>
                                 <?php echo ucfirst($b['status']); ?>
                             </span>
                         </td>
-                        <td style="font-size:0.75rem;color:var(--gray-400);">
+                        <td data-label="Date" style="font-size:0.75rem;color:var(--gray-400);">
                             <?php echo date('M d, Y', strtotime($b['created_at'])); ?>
                         </td>
-                        <td>
+                        <td data-label="Actions">
                             <div style="display:flex;gap:5px;">
                                 <a href="view.php?id=<?php echo $b['id']; ?>"
                                    class="btn btn-sm btn-outline-info" title="View">
@@ -441,6 +441,7 @@ $collection_rate = $totals['total_due'] > 0
                     <?php endif; ?>
                 </tbody>
             </table>
+            </div>
         </div>
 
         <?php if ($total_pages > 1): ?>
