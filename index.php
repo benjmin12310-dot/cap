@@ -494,7 +494,7 @@ if ($view === 'otp_reset') {
     <!-- LEFT BRANDING PANEL -->
     <div class="login-panel">
         <div class="panel-icon">🦷</div>
-        <div class="panel-title">DentalCare</div>
+       <?php echo $_ENV['APP_NAME'] ?? 'DentalCare'; ?>
         <div class="panel-subtitle">Clinic Management System<br>Secure · Reliable · Fast</div>
         <div class="panel-dots">
             <span class="<?php echo $view === 'login' ? 'active' : ''; ?>"></span>
