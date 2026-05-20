@@ -3594,6 +3594,7 @@ body,
     .btn-sm {
         padding: 5px 9px;
         font-size: 0.75rem;
+        min-height: 44px;
     }
 }
 
