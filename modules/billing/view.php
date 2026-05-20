@@ -50,11 +50,8 @@ $flow_done  = isset($_GET['flow']) && $_GET['flow'] === 'done';
                     <i class="bi bi-printer"></i> Print Receipt
                 </a>
                 <?php if ($bill['status'] !== 'paid'): ?>
-                <a href="generate_link.php?id=<?php echo $id; ?>" class="btn btn-sm btn-primary">
-                    <i class="bi bi-link-45deg"></i> Payment Link
-                </a>
                 <a href="pay.php?id=<?php echo $id; ?>" class="btn btn-sm btn-success">
-                    <i class="bi bi-cash"></i> Manual Payment
+                    <i class="bi bi-cash"></i> Record Payment
                 </a>
                 <?php endif; ?>
                 <a href="list.php" class="btn btn-sm btn-outline-secondary">
@@ -128,8 +125,6 @@ $flow_done  = isset($_GET['flow']) && $_GET['flow'] === 'done';
                                 }],
                             ];
                             if ($bill['payment_ref']) $rows[] = ['Reference No.', $bill['payment_ref']];
-                            if ($bill['paymongo_link_url'] ?? '') $rows[] = ['Payment Link', '🔗 <a href="' . htmlspecialchars($bill['paymongo_link_url']) . '" target="_blank" style="font-size:0.78rem;">Open Link</a>'];
-                            if ($bill['paymongo_paid_at'] ?? '') $rows[] = ['Paid Online At', date('M d, Y h:i A', strtotime($bill['paymongo_paid_at']))];
                             if ($bill['appointment_code']) $rows[] = ['Appointment', $bill['appointment_code'] . ' — ' . date('M d, Y', strtotime($bill['appointment_date']))];
                             if ($bill['notes']) $rows[] = ['Notes', $bill['notes']];
                             foreach ($rows as [$label, $value]):
