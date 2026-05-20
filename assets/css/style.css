@@ -3140,6 +3140,7 @@ body {
 .btn-sm {
     padding: 5.5px 11px;
     font-size: 0.78rem;
+   min-height: 44px;
 }
 
 .btn-lg {
