@@ -185,8 +185,8 @@ $services = $conn->query(
         <!-- Services Table -->
         <div class="card">
             <div class="card-body p-0">
-                <div class="table-responsive">
-<table class="table table-hover mb-0" id="servicesTable">
+                <div class="mobile-card-table-wrap">
+<table class="table table-hover mb-0 mobile-card-table" id="servicesTable">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -208,29 +208,29 @@ $services = $conn->query(
                         <?php else: ?>
                         <?php foreach ($services as $i => $s): ?>
                         <tr class="<?php echo $s['is_active'] ? '' : 'table-secondary text-muted'; ?>">
-                            <td class="text-muted small"><?php echo $i + 1; ?></td>
-                            <td>
+                            <td data-label="#" class="text-muted small"><?php echo $i + 1; ?></td>
+                            <td data-label="Service Name">
                                 <strong><?php echo e($s['service_name']); ?></strong>
                             </td>
-                            <td class="text-muted small" style="max-width:220px;">
+                            <td data-label="Description" class="text-muted small" style="max-width:220px;">
                                 <?php echo $s['description'] ? e($s['description']) : '<em class="text-muted">—</em>'; ?>
                             </td>
-                            <td>
+                            <td data-label="Duration">
                                 <span class="badge bg-light text-dark border">
                                     <i class="bi bi-clock"></i> <?php echo (int)$s['duration_minutes']; ?> min
                                 </span>
                             </td>
-                            <td>
+                            <td data-label="Price">
                                 <strong>₱<?php echo number_format($s['price'], 2); ?></strong>
                             </td>
-                            <td>
+                            <td data-label="Status">
                                 <?php if ($s['is_active']): ?>
                                     <span class="badge bg-success">Active</span>
                                 <?php else: ?>
                                     <span class="badge bg-secondary">Inactive</span>
                                 <?php endif; ?>
                             </td>
-                            <td>
+                            <td data-label="Actions">
                                 <button class="btn btn-sm btn-outline-primary me-1"
                                     title="Edit Service"
                                     onclick="openEditModal(<?php echo htmlspecialchars(json_encode($s), ENT_QUOTES); ?>)">
@@ -248,6 +248,7 @@ $services = $conn->query(
                         <?php endif; ?>
                     </tbody>
                 </table>
+                </div>
             </div>
             <?php if ($total > 0): ?>
             <div class="card-footer text-muted small">
