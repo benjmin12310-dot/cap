@@ -43,32 +43,48 @@ if (isset($conn) && (time() - $cache_time) > 30) {
     $recent_notifs = $_SESSION[$cache_key . '_recent'] ?? [];
 }
 ?>
-<div id="topbar">
+<div id="topbar" role="banner">
     <div class="topbar-left">
-        <button id="sidebar-toggle" title="Toggle Sidebar">
-            <i class="bi bi-layout-sidebar"></i>
+        <button id="sidebar-toggle" title="Toggle Sidebar"
+                aria-label="Toggle navigation sidebar"
+                aria-controls="sidebar"
+                aria-expanded="true">
+            <i class="bi bi-layout-sidebar" aria-hidden="true"></i>
         </button>
         <div class="topbar-title-block">
             <span class="page-title"><?php echo e($page_title ?? APP_NAME); ?></span>
         </div>
     </div>
     <div class="topbar-right">
-        <button id="theme-toggle" class="notif-btn" title="Toggle dark mode" onclick="toggleTheme()">
-            <i class="bi bi-moon-fill" id="theme-icon"></i>
+        <button id="theme-toggle" class="notif-btn" title="Toggle dark mode"
+                aria-label="Toggle dark mode"
+                aria-pressed="false"
+                onclick="toggleTheme()">
+            <i class="bi bi-moon-fill" id="theme-icon" aria-hidden="true"></i>
         </button>
 
         <!-- Notification Bell with Dropdown -->
         <div class="notif-wrapper" id="notifWrapper">
-            <button class="notif-btn" id="notifBell" title="Notifications" onclick="toggleNotifPanel(event)">
-                <i class="bi bi-bell"></i>
+            <button class="notif-btn" id="notifBell"
+                    title="Notifications"
+                    aria-label="Notifications<?php echo $notif_count > 0 ? ', ' . $notif_count . ' unread' : ''; ?>"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    aria-controls="notifPanel"
+                    onclick="toggleNotifPanel(event)">
+                <i class="bi bi-bell" aria-hidden="true"></i>
                 <?php if ($notif_count > 0): ?>
-                    <span class="notif-badge" id="notifBadge"><?php echo $notif_count > 99 ? '99+' : $notif_count; ?></span>
+                    <span class="notif-badge" id="notifBadge" aria-hidden="true"><?php echo $notif_count > 99 ? '99+' : $notif_count; ?></span>
                 <?php else: ?>
-                    <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                    <span class="notif-badge" id="notifBadge" style="display:none;" aria-hidden="true">0</span>
                 <?php endif; ?>
             </button>
 
-            <div class="notif-panel" id="notifPanel" style="display:none;">
+            <div class="notif-panel" id="notifPanel"
+                 role="dialog"
+                 aria-label="Notifications"
+                 aria-modal="false"
+                 style="display:none;">
                 <div class="notif-panel-head">
                     <span style="font-weight:700;font-size:0.88rem;">Notifications</span>
                     <?php if ($notif_count > 0): ?>
@@ -129,8 +145,9 @@ if (isset($conn) && (time() - $cache_time) > 30) {
                 <?php echo ucfirst($current_user_role); ?>
             </span>
         </div>
-        <a href="<?php echo BASE_URL; ?>logout.php" class="btn-logout">
-            <i class="bi bi-box-arrow-right"></i><span class="btn-logout-text"> Logout</span>
+        <a href="<?php echo BASE_URL; ?>logout.php" class="btn-logout"
+           aria-label="Logout">
+            <i class="bi bi-box-arrow-right" aria-hidden="true"></i><span class="btn-logout-text"> Logout</span>
         </a>
     </div>
 </div>
