@@ -1,8 +1,14 @@
 <?php
 // footer.php — Closing scripts included at the bottom of every admin page.
+$_bs_js_local = $GLOBALS['_bootstrap_js_local'] ?? file_exists(dirname(__DIR__) . '/assets/js/bootstrap.bundle.min.js');
 ?>
+<?php if ($_bs_js_local): ?>
 <script src="<?php echo BASE_URL; ?>assets/js/bootstrap.bundle.min.js"></script>
+<?php else: ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<?php endif; ?>
 <script src="<?php echo BASE_URL; ?>assets/js/app.js"></script>
+<script src="<?php echo BASE_URL; ?>assets/js/accessibility.js"></script>
 
 <!-- Global phone input sync script (used by phone_input.php component) -->
 <script>
