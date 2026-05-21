@@ -13,10 +13,15 @@ function nav_active($path) {
     return strpos($_SERVER['PHP_SELF'], $path) !== false ? 'active' : '';
 }
 ?>
-<!-- Mobile sidebar backdrop — tap to close -->
-<div id="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+<!-- Skip-to-content link (accessibility) -->
+<a class="skip-link" href="#main-content">Skip to main content</a>
+<!-- Screen-reader live region for dynamic announcements -->
+<div id="a11y-live-region" aria-live="polite" aria-atomic="true"></div>
 
-<div id="sidebar">
+<!-- Mobile sidebar backdrop — tap to close -->
+<div id="sidebar-backdrop" onclick="closeMobileSidebar()" aria-hidden="true"></div>
+
+<nav id="sidebar" aria-label="Main navigation">
 
     <div class="sidebar-brand" id="brandTrigger" title="Click to customize" style="cursor:pointer;">
     <div class="sidebar-brand-icon" id="brandIconWrap">
@@ -117,81 +122,94 @@ function nav_active($path) {
 })();
 </script>
 
-    <ul class="sidebar-nav">
+    <ul class="sidebar-nav" role="list">
 
-        <li><span class="nav-section-label">Main</span></li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>dashboard.php" class="<?php echo nav_active('dashboard'); ?>">
-                <i class="bi bi-house-door-fill"></i><span class="nav-label">Dashboard</span>
-            </a>
-        </li>
-
-        <li><span class="nav-section-label">Patients</span></li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/patients/list.php" class="<?php echo nav_active('/patients/list'); ?>">
-                <i class="bi bi-people-fill"></i><span class="nav-label">Patient Records</span>
-            </a>
-        </li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/treatments/list.php" class="<?php echo nav_active('/treatments/'); ?>">
-                <i class="bi bi-journal-medical"></i><span class="nav-label">Dental Records</span>
+        <li role="presentation"><span class="nav-section-label" aria-hidden="true">Main</span></li>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>dashboard.php" class="<?php echo nav_active('dashboard'); ?>"
+               <?php echo nav_active('dashboard') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-house-door-fill" aria-hidden="true"></i><span class="nav-label">Dashboard</span>
             </a>
         </li>
 
-        <li><span class="nav-section-label">Appointments</span></li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/appointments/list.php" class="<?php echo nav_active('/appointments/list'); ?>">
-                <i class="bi bi-calendar-check-fill"></i><span class="nav-label">Appointments</span>
+        <li role="presentation"><span class="nav-section-label" aria-hidden="true">Patients</span></li>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/patients/list.php" class="<?php echo nav_active('/patients/list'); ?>"
+               <?php echo nav_active('/patients/list') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-people-fill" aria-hidden="true"></i><span class="nav-label">Patient Records</span>
             </a>
         </li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/appointments/calendar.php" class="<?php echo nav_active('/appointments/calendar'); ?>">
-                <i class="bi bi-calendar3"></i><span class="nav-label">Calendar</span>
-            </a>
-        </li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/schedule/manage.php" class="<?php echo nav_active('/schedule/'); ?>">
-                <i class="bi bi-clock-history"></i><span class="nav-label">Schedule</span>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/treatments/list.php" class="<?php echo nav_active('/treatments/'); ?>"
+               <?php echo nav_active('/treatments/') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-journal-medical" aria-hidden="true"></i><span class="nav-label">Dental Records</span>
             </a>
         </li>
 
-        <li><span class="nav-section-label">Billing</span></li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/billing/list.php" class="<?php echo nav_active('/billing/'); ?>">
-                <i class="bi bi-receipt"></i><span class="nav-label">Billing</span>
+        <li role="presentation"><span class="nav-section-label" aria-hidden="true">Appointments</span></li>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/appointments/list.php" class="<?php echo nav_active('/appointments/list'); ?>"
+               <?php echo nav_active('/appointments/list') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-calendar-check-fill" aria-hidden="true"></i><span class="nav-label">Appointments</span>
+            </a>
+        </li>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/appointments/calendar.php" class="<?php echo nav_active('/appointments/calendar'); ?>"
+               <?php echo nav_active('/appointments/calendar') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-calendar3" aria-hidden="true"></i><span class="nav-label">Calendar</span>
+            </a>
+        </li>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/schedule/manage.php" class="<?php echo nav_active('/schedule/'); ?>"
+               <?php echo nav_active('/schedule/') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-clock-history" aria-hidden="true"></i><span class="nav-label">Schedule</span>
+            </a>
+        </li>
+
+        <li role="presentation"><span class="nav-section-label" aria-hidden="true">Billing</span></li>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/billing/list.php" class="<?php echo nav_active('/billing/'); ?>"
+               <?php echo nav_active('/billing/') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-receipt" aria-hidden="true"></i><span class="nav-label">Billing</span>
             </a>
         </li>
 
         <?php if (is_admin()): ?>
-        <li><span class="nav-section-label">Admin</span></li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/analytics/dashboard.php" class="<?php echo nav_active('/analytics/'); ?>">
-                <i class="bi bi-bar-chart-fill"></i><span class="nav-label">Analytics</span>
+        <li role="presentation"><span class="nav-section-label" aria-hidden="true">Admin</span></li>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/analytics/dashboard.php" class="<?php echo nav_active('/analytics/'); ?>"
+               <?php echo nav_active('/analytics/') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-bar-chart-fill" aria-hidden="true"></i><span class="nav-label">Analytics</span>
             </a>
         </li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/reports/index.php" class="<?php echo nav_active('/reports/'); ?>">
-                <i class="bi bi-file-earmark-bar-graph-fill"></i><span class="nav-label">Reports</span>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/reports/index.php" class="<?php echo nav_active('/reports/'); ?>"
+               <?php echo nav_active('/reports/') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-file-earmark-bar-graph-fill" aria-hidden="true"></i><span class="nav-label">Reports</span>
             </a>
         </li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/users/list.php" class="<?php echo nav_active('/users/'); ?>">
-                <i class="bi bi-person-gear"></i><span class="nav-label">Users</span>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/users/list.php" class="<?php echo nav_active('/users/'); ?>"
+               <?php echo nav_active('/users/') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-person-gear" aria-hidden="true"></i><span class="nav-label">Users</span>
             </a>
         </li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/services/list.php" class="<?php echo nav_active('/services/'); ?>">
-                <i class="bi bi-grid-fill"></i><span class="nav-label">Services</span>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/services/list.php" class="<?php echo nav_active('/services/'); ?>"
+               <?php echo nav_active('/services/') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-grid-fill" aria-hidden="true"></i><span class="nav-label">Services</span>
             </a>
         </li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/doctors/list.php" class="<?php echo nav_active('/doctors/'); ?>">
-                <i class="bi bi-person-badge-fill"></i><span class="nav-label">Doctors</span>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/doctors/list.php" class="<?php echo nav_active('/doctors/'); ?>"
+               <?php echo nav_active('/doctors/') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-person-badge-fill" aria-hidden="true"></i><span class="nav-label">Doctors</span>
             </a>
         </li>
-        <li>
-            <a href="<?php echo BASE_URL; ?>modules/logs/activity.php" class="<?php echo nav_active('/logs/'); ?>">
-                <i class="bi bi-shield-fill-check"></i><span class="nav-label">Audit Logs</span>
+        <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/logs/activity.php" class="<?php echo nav_active('/logs/'); ?>"
+               <?php echo nav_active('/logs/') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-shield-fill-check" aria-hidden="true"></i><span class="nav-label">Audit Logs</span>
             </a>
         </li>
         <?php endif; ?>
@@ -208,4 +226,4 @@ function nav_active($path) {
         </div>
     </div>
 
-</div>
+</nav>
