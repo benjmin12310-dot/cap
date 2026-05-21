@@ -71,7 +71,15 @@ $appointments = $conn->query("
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><?php include '../../includes/head.php'; ?></head>
+<head><?php include '../../includes/head.php'; ?>
+<style>
+/* Ensure all table cells align vertically to centre */
+#appointmentsTable td { vertical-align: middle !important; }
+/* Uniform minimum height on all action buttons */
+#appointmentsTable td a[style],
+#appointmentsTable td button[style] { box-sizing: border-box; min-height: 30px; }
+</style>
+</head>
 <body>
 <?php include '../../includes/sidebar.php'; ?>
 <div class="main-content">
@@ -811,49 +819,60 @@ function submitWalkin() {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-person-check-fill"></i> <span id="walkinBtnLabel">' + (isToday ? 'Register Patient' : 'Book Appointment') + '</span>';
         if (res.status === 'success') {
-            location.reload();
-            var appt = res.appt || {};
+            var appt        = res.appt || {};
+            var isReturning = !!res.is_returning;
+            var returningBadge = isReturning
+                ? ' <span style="font-size:0.7rem;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:10px;padding:1px 6px;font-weight:600;">Returning</span>'
+                : '';
             var timeLabel = appt.time ? new Date('1970-01-01T' + appt.time).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',hour12:true}) : '';
             var apptDate  = appt.date || date;
             var dateLabel = new Date(apptDate + 'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'2-digit',year:'numeric'});
 
-            // Inject row
+            // Inject a preview row while the page reloads
             var tbody = document.querySelector('#appointmentsTable tbody');
             if (tbody) {
                 var placeholder = tbody.querySelector('td[colspan]');
                 if (placeholder) placeholder.closest('tr').remove();
-                var confirmBtn = '<button class="btn btn-sm btn-outline-primary" onclick="openConfirmModal(' + (appt.appt_id||'') + ', \'' + (appt.appt_code||'') + '\', \'' + (appt.patient_name||'').replace(/'/g,"\\'") + '\')" title="Confirm Appointment"><i class="bi bi-check-lg"></i> Confirm</button>';
-                var printBtn   = '<a href="' + _baseUrl + 'modules/print/appointment_slip.php?id=' + (appt.appt_id||'') + '" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print Slip"><i class="bi bi-printer"></i></a>';
-                var editBtn    = '<button class="btn btn-sm btn-outline-secondary" title="Edit"><i class="bi bi-pencil-square"></i></button>';
-                var delBtn     = '<button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteAppt(' + (appt.appt_id||'') + ', \'' + (appt.appt_code||'') + '\')" title="Delete"><i class="bi bi-trash"></i></button>';
+                var cBtn = '<button style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;min-height:30px;border-radius:8px;background:var(--blue-50);color:var(--primary);border:1.5px solid var(--blue-200);font-size:0.75rem;font-weight:700;cursor:pointer;" onclick="openConfirmModal(' + (appt.appt_id||0) + ',\'' + (appt.appt_code||'').replace(/'/g,"\\x27") + '\',\'' + (appt.patient_name||'').replace(/'/g,"\\x27") + '\')"><i class="bi bi-check-lg"></i> Confirm</button>';
+                var pBtn = '<a href="' + _baseUrl + 'modules/print/appointment_slip.php?id=' + (appt.appt_id||'') + '" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;background:var(--gray-50);color:var(--gray-500);border:1.5px solid var(--gray-200);text-decoration:none;font-size:0.8rem;"><i class="bi bi-printer"></i></a>';
+                var eBtn = '<button style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;background:var(--gray-50);color:var(--gray-500);border:1.5px solid var(--gray-200);cursor:pointer;font-size:0.8rem;"><i class="bi bi-pencil-square"></i></button>';
+                var dBtn = '<button style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;background:var(--danger-bg);color:var(--danger);border:1.5px solid var(--danger-border);cursor:pointer;font-size:0.8rem;" onclick="confirmDeleteAppt(' + (appt.appt_id||0) + ',\'' + (appt.appt_code||'').replace(/'/g,"\\x27") + '\')"><i class="bi bi-trash"></i></button>';
                 var tr = document.createElement('tr');
                 tr.style.cssText = 'background:var(--warning-bg);transition:background 3s ease;';
-        
                 tr.innerHTML =
-                    '<td style="font-weight:600;color:var(--blue-500);font-size:0.8rem;">' + (appt.appt_code||'—') + '</td>' +
-                    '<td style="font-weight:500;">' + (appt.patient_name||'—') + returningBadge + '<br><small style="color:var(--gray-400);">' + (appt.patient_code||'') + '</small></td>' +
-                    '<td style="color:var(--gray-500);font-size:0.82rem;">' + (appt.service||'—') + '</td>' +
-                    '<td><span class="badge rounded-pill" style="background:var(--primary);opacity:0.85;font-size:0.72rem;">' + (appt.doctor_name && appt.doctor_name!=='—' ? appt.doctor_name : 'Any') + '</span></td>' +
-                    '<td style="font-size:0.82rem;">' + dateLabel + '</td>' +
-                    '<td style="font-size:0.82rem;">' + timeLabel + '</td>' +
-                    '<td><span class="badge bg-warning text-dark">Pending</span></td>' +
-                    '<td><div style="display:flex;gap:5px;">' + confirmBtn + printBtn + editBtn + delBtn + '</div></td>';
+                    '<td data-label="Code" style="padding:13px 16px;vertical-align:middle;">'
+                        + '<span style="font-size:0.79rem;font-weight:700;color:var(--primary);font-family:monospace;">' + (appt.appt_code||'--') + '</span></td>'
+                    + '<td data-label="Patient" style="padding:13px 16px;vertical-align:middle;">'
+                        + '<div style="font-size:0.85rem;font-weight:700;color:var(--gray-900);">' + (appt.patient_name||'--') + returningBadge + '</div></td>'
+                    + '<td data-label="Service" style="padding:13px 16px;vertical-align:middle;">'
+                        + '<div style="font-size:0.82rem;color:var(--gray-600);font-weight:500;">' + (appt.service||'--') + '</div></td>'
+                    + '<td data-label="Doctor" style="padding:13px 16px;vertical-align:middle;">'
+                        + '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:linear-gradient(135deg,#2563eb,#60a5fa);color:#fff;font-size:0.71rem;font-weight:700;white-space:nowrap;">'
+                        + '<i class="bi bi-person-badge" style="font-size:0.68rem;"></i>'
+                        + (appt.doctor_name ? appt.doctor_name : 'Any') + '</span></td>'
+                    + '<td data-label="Date &amp; Time" style="padding:13px 16px;vertical-align:middle;">'
+                        + '<div style="font-size:0.82rem;font-weight:700;color:var(--gray-700);">' + dateLabel + '</div>'
+                        + '<div style="font-size:0.73rem;color:var(--gray-400);margin-top:1px;"><i class="bi bi-clock" style="font-size:0.65rem;"></i> ' + timeLabel + '</div></td>'
+                    + '<td data-label="Status" style="padding:13px 16px;vertical-align:middle;">'
+                        + '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:20px;font-size:0.73rem;font-weight:700;background:#fffbeb;color:#d97706;border:1.5px solid #fde68a;">'
+                        + '<i class="bi bi-clock-history" style="font-size:0.68rem;"></i> Pending</span></td>'
+                    + '<td data-label="Actions" style="padding:13px 16px;vertical-align:middle;">'
+                        + '<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">' + cBtn + pBtn + eBtn + dBtn + '</div></td>';
                 tbody.insertBefore(tr, tbody.firstChild);
                 setTimeout(() => { tr.style.background = ''; }, 3000);
             }
 
-            // Toast
-            var isReturning = res.is_returning;
-            var toastTitle = isReturning ? '📋 Returning Patient Booked!' : (isToday ? '✅ Patient Registered!' : '📅 Advance Booking Saved!');
+            // Toast — then reload so the real server-rendered row takes over
+            var toastTitle = isReturning ? 'Returning Patient Booked!' : (isToday ? 'Patient Registered!' : 'Advance Booking Saved!');
             var toastMsg   = '<strong>' + (appt.patient_name||'') + '</strong> (' + (appt.patient_code||'') + ')<br>';
-            toastMsg += isReturning ? 'Existing record used — no duplicate created.<br>' : '';
-            toastMsg += 'Appt: <strong>' + (appt.appt_code||'') + '</strong> · ' + dateLabel + ' at <strong>' + timeLabel + '</strong>';
+            toastMsg += isReturning ? 'Existing record used - no duplicate created.<br>' : '';
+            toastMsg += 'Appt: <strong>' + (appt.appt_code||'') + '</strong> - ' + dateLabel + ' at <strong>' + timeLabel + '</strong>';
             document.getElementById('walkinToastTitle').textContent = toastTitle;
             document.getElementById('walkinToastMsg').innerHTML = toastMsg;
-            var toast = document.getElementById('walkinToast');
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 6000);
+            document.getElementById('walkinToast').style.display = 'block';
             form.reset();
+            closeWalkinDrawer();
+            setTimeout(() => { location.reload(); }, 2500);
         } else {
             showDrawerAlert('danger', res.message || 'Something went wrong. Please try again.');
         }
