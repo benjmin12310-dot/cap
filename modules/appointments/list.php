@@ -373,6 +373,40 @@ $appointments = $conn->query("
     </div>
 </div>
 
+<!-- No Dental Record Warning Modal -->
+<div class="modal fade" id="noRecordModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header" style="border-bottom:1px solid #fde68a;background:#fffbeb;">
+                <h6 class="modal-title" style="color:#92400e;">
+                    <i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b;margin-right:6px;"></i>
+                    No Treatment Record Yet
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="font-size:0.875rem;color:#374151;">
+                <p style="margin:0 0 10px;">This appointment has <strong>no dental record</strong> attached to it yet.</p>
+                <p style="margin:0;color:#6b7280;font-size:0.8rem;">Would you like to record the treatment first, or mark it as completed anyway?</p>
+                <div style="margin-top:12px;padding:10px 12px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;font-size:0.78rem;color:#92400e;">
+                    <i class="bi bi-info-circle-fill" style="margin-right:5px;"></i>
+                    Skipping this may leave the patient's clinical history incomplete.
+                </div>
+            </div>
+            <div class="modal-footer" style="flex-wrap:wrap;gap:6px;justify-content:stretch;">
+                <button type="button" class="btn btn-sm btn-primary" style="flex:1;min-width:140px;" onclick="goToRecordTreatment()">
+                    <i class="bi bi-clipboard2-pulse"></i> Go to Record Treatment
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" style="flex:1;min-width:120px;" onclick="completeAnyway()">
+                    <i class="bi bi-check2-all"></i> Complete Anyway
+                </button>
+                <button type="button" class="btn btn-sm btn-link text-secondary w-100" style="font-size:0.78rem;" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Delete Appointment Modal -->
 <div class="modal fade" id="deleteApptModal" tabindex="-1">
     <div class="modal-dialog modal-sm">
@@ -418,10 +452,45 @@ function saveStatus() {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.status === 'success') { statusModal.hide(); location.reload(); }
+        if (data.status === 'success') {
+            statusModal.hide();
+            location.reload();
+        } else if (data.status === 'no_record_warning') {
+            // No dental record found — show the warning modal
+            statusModal.hide();
+            pendingCompleteId = data.appt_id;
+            noRecordModal.show();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+}
+
+// ── No-treatment-record warning modal helpers ─────────────────
+var noRecordModal    = new bootstrap.Modal(document.getElementById('noRecordModal'));
+var pendingCompleteId = null;
+
+function goToRecordTreatment() {
+    // Redirect to the add dental record page, pre-linked to this appointment
+    noRecordModal.hide();
+    window.location.href = '<?php echo BASE_URL; ?>modules/treatments/add.php?appointment_id=' + pendingCompleteId;
+}
+
+function completeAnyway() {
+    // User confirmed they want to complete without a record — send force=true
+    noRecordModal.hide();
+    fetch('<?php echo BASE_URL; ?>api/appointments.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_status', id: pendingCompleteId, status: 'completed', force: true })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') location.reload();
         else alert('Error: ' + data.message);
     });
 }
+// ─────────────────────────────────────────────────────────────
 
 function confirmDeleteAppt(id, code) {
     deleteApptId = id;
