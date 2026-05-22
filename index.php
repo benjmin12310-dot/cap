@@ -268,19 +268,11 @@ if ($view === 'otp_reset') {
             }
         }
 
+        // IP-based lockout via rate_limits table (session-based lockout is trivially bypassed without cookies)
+        api_rate_limit($conn, 'login', MAX_LOGIN_ATTEMPTS, LOCKOUT_SECONDS);
+
         $attempts  = $_SESSION['login_attempts']  ?? 0;
         $last_fail = $_SESSION['last_fail_time']  ?? 0;
-
-        if (empty($error) && $attempts >= MAX_LOGIN_ATTEMPTS) {
-            $wait = LOCKOUT_SECONDS - (time() - $last_fail);
-            if ($wait > 0) {
-                $error = 'Too many failed attempts. Please wait ' . ceil($wait / 60) . ' minute(s) before trying again.';
-                generate_captcha();
-            } else {
-                $_SESSION['login_attempts'] = 0;
-                $attempts = 0;
-            }
-        }
 
         if (empty($error)) {
             if (empty($username) || empty($password)) {
@@ -300,6 +292,9 @@ if ($view === 'otp_reset') {
                 if ($user && password_verify($password, $user['password'])) {
                     unset($_SESSION['login_attempts'], $_SESSION['last_fail_time'],
                           $_SESSION['captcha_answer'], $_SESSION['captcha_n1'], $_SESSION['captcha_n2']);
+
+                    // Regenerate session ID on login to prevent session fixation attacks
+                    session_regenerate_id(true);
 
                     $_SESSION['user_id']       = $user['id'];
                     $_SESSION['full_name']     = $user['full_name'];
@@ -338,10 +333,10 @@ if ($view === 'otp_reset') {
         echo htmlspecialchars($titles[$view] ?? 'Login') . ' | ' . APP_NAME;
         ?>
     </title>
-    <link rel="icon"             type="image/x-icon"      href="<?php echo BASE_URL; ?>assets/images/favicon.ico">
-    <link rel="icon"             type="image/svg+xml"      href="<?php echo BASE_URL; ?>assets/images/favicon.svg">
-    <link rel="icon"             type="image/png" sizes="32x32" href="<?php echo BASE_URL; ?>assets/images/favicon-32.png">
-    <link rel="apple-touch-icon" sizes="180x180"           href="<?php echo BASE_URL; ?>assets/images/favicon-32.png">
+    <link rel="icon"             type="image/x-icon"      href="<?php echo BASE_URL; ?>assets/img/favicon.ico">
+    <link rel="icon"             type="image/svg+xml"      href="<?php echo BASE_URL; ?>assets/img/favicon.svg">
+    <link rel="icon"             type="image/png" sizes="32x32" href="<?php echo BASE_URL; ?>assets/img/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180"           href="<?php echo BASE_URL; ?>assets/img/favicon-32.png">
     <meta name="theme-color" content="#2563eb">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="assets/css/style.css">
