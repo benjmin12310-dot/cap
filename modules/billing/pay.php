@@ -24,6 +24,7 @@ $balance = $bill['amount_due'] - $bill['amount_paid'];
 $error   = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        validate_csrf();
         $add_payment    = round(floatval($_POST['add_payment'] ?? 0), 2);
     $payment_method = $_POST['payment_method'] ?? 'cash';
     $gcash_ref      = trim($_POST['gcash_ref'] ?? '');
@@ -129,6 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <form method="POST">
+                    <?php echo csrf_field(); ?>
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label">Amount to Pay (₱) <span style="color:var(--danger)">*</span></label>
