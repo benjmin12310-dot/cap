@@ -15,6 +15,7 @@ $success = '';
 $old     = $_POST; // repopulate form on error
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        validate_csrf();
         $first_name  = ucwords(strtolower(trim($_POST['first_name'] ?? '')));
     $last_name   = ucwords(strtolower(trim($_POST['last_name'] ?? '')));
     $middle_name = ucwords(strtolower(trim($_POST['middle_name'] ?? '')));
@@ -145,6 +146,7 @@ function old($key, $default = '') {
             </div>
             <div class="card-body">
                 <form method="POST" id="patientForm" novalidate>
+                    <?php echo csrf_field(); ?>
 
                     <!-- Section: Personal -->
                     <div style="background:var(--gray-50);border-radius:8px;padding:16px 18px;margin-bottom:22px;">
