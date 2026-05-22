@@ -84,33 +84,6 @@ function secure_str($conn, $value) {
     return $conn->real_escape_string(trim($value));
 }
 
-// ── CSRF Protection ───────────────────────────────────────────────────────
-// generate_csrf_token() — call once per page load, store in session + hidden field
-// verify_csrf_token()   — call at top of every POST handler
-function generate_csrf_token(): string {
-    if (empty($_SESSION['csrf_token']) || empty($_SESSION['csrf_token_time']) ||
-        (time() - $_SESSION['csrf_token_time']) > 3600) {
-        $_SESSION['csrf_token']      = bin2hex(random_bytes(32));
-        $_SESSION['csrf_token_time'] = time();
-    }
-    return $_SESSION['csrf_token'];
-}
-
-function verify_csrf_token(): void {
-    $token = $_POST['_csrf'] ?? '';
-    if (empty($token) || empty($_SESSION['csrf_token']) ||
-        !hash_equals($_SESSION['csrf_token'], $token)) {
-        http_response_code(403);
-        die('Invalid or missing security token. Please go back and try again.');
-    }
-}
-
-// Emit a hidden CSRF input — drop <?php echo csrf_field(); ?> inside every <form>
-function csrf_field(): string {
-    $token = generate_csrf_token();
-    return '<input type="hidden" name="_csrf" value="' . htmlspecialchars($token, ENT_QUOTES) . '">';
-}
-
 // Safely echo user-supplied data in HTML — always use this instead of echo directly
 function e($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
@@ -356,3 +329,5 @@ function require_api_auth($conn): array {
     echo json_encode(['status' => 'error', 'message' => 'Authentication required.']);
     exit();
 }
+
+
