@@ -27,3 +27,4 @@ RUN mkdir -p assets/css/fonts assets/js && \
 
 # Use FrankenPHP (multi-threaded, production-grade) instead of php -S
 ENTRYPOINT ["frankenphp", "php-server", "--listen", "0.0.0.0:8080", "--root", "/app"]
+RUN rm -rf database/ docs/
