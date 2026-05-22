@@ -108,6 +108,15 @@ if (isset($conn) && (time() - $cache_time) > 30) {
                             'reminder'    => ['bi-alarm-fill',          '#d97706'],
                         ];
                         [$icon, $color] = $icon_map[$n['type']] ?? ['bi-bell-fill', '#6b7280'];
+                        // Override icon for cancelled / no-show so they don't look like confirmations
+                        $title_lower = strtolower($n['title']);
+                        if (str_contains($title_lower, 'cancel')) {
+                            $icon  = 'bi-calendar-x-fill';
+                            $color = '#dc2626';
+                        } elseif (str_contains($title_lower, 'no-show') || str_contains($title_lower, 'no show')) {
+                            $icon  = 'bi-calendar-minus-fill';
+                            $color = '#f59e0b';
+                        }
                         $is_unread = !$n['is_read'];
                         $link = $n['link'] ? BASE_URL . ltrim($n['link'], '/') : '#';
                         $time_ago = '';
