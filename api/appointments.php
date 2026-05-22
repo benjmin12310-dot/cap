@@ -153,9 +153,33 @@ if ($action === 'update_status') {
 
     if (!$id || !in_array($status, $allowed)) {
         http_response_code(422);
-echo json_encode(['status' => 'error', 'message' => 'Invalid data.']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid data.']);
         exit();
     }
+
+    // ── Dental-record check ───────────────────────────────────────
+    // If marking as completed, check whether a dental record exists.
+    // Return a warning (not an error) so the frontend can ask the user.
+    // Pass force=true in the request body to skip the warning and complete anyway.
+    if ($status === 'completed' && empty($body['force'])) {
+        $chk = $conn->prepare(
+            "SELECT COUNT(*) as c FROM dental_records WHERE appointment_id = ?"
+        );
+        $chk->bind_param('i', $id);
+        $chk->execute();
+        $chk_row = $chk->get_result()->fetch_assoc();
+        $chk->close();
+
+        if (($chk_row['c'] ?? 0) == 0) {
+            // No treatment record — tell the frontend to show the warning modal
+            echo json_encode([
+                'status'  => 'no_record_warning',
+                'appt_id' => $id,
+            ]);
+            exit();
+        }
+    }
+    // ─────────────────────────────────────────────────────────────
 
     $stmt = $conn->prepare("UPDATE appointments SET status = ? WHERE id = ?");
     $stmt->bind_param('si', $status, $id);
