@@ -312,11 +312,15 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                                 <?php endif; ?>
                             </div>
                         </div>
-                        <!-- "All Records" removed here — covered by "Back to Records" at the top -->
                         <div class="patient-action-btns" style="display:flex;gap:8px;flex-wrap:wrap;">
                             <a href="../patients/view.php?id=<?php echo $r['pid']; ?>" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-person"></i> Full Profile
                             </a>
+                            <?php if (!empty($other_records)): ?>
+                            <a href="list.php?patient_id=<?php echo $r['pid']; ?>" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-journal-medical"></i> All Records
+                            </a>
+                            <?php endif; ?>
                             <a href="add.php?patient_id=<?php echo $r['pid']; ?>" class="btn btn-sm btn-success">
                                 <i class="bi bi-plus"></i> Add Record
                             </a>
