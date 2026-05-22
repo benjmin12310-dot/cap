@@ -3,6 +3,15 @@ require_once 'includes/config.php';
 require_once 'includes/db.php';
 require_once 'includes/auth.php';
 
+
+// Safe query helper — prevents fatal errors if a query returns false on DB hiccup
+function db_val($conn, string $sql, string $field = 'c', $default = 0) {
+    $r = $conn->query($sql);
+    if (!$r) { error_log('[DB] Query failed: ' . $conn->error); return $default; }
+    $row = $r->fetch_assoc();
+    return $row[$field] ?? $default;
+}
+
 $page_title = 'Dashboard';
 
 $today            = date('Y-m-d');
@@ -10,19 +19,19 @@ $month_start      = date('Y-m-01');
 $last_month_start = date('Y-m-01', strtotime('-1 month'));
 $last_month_end   = date('Y-m-t',  strtotime('-1 month'));
 
-$total_patients       = (int)$conn->query("SELECT COUNT(*) as c FROM patients WHERE is_active = 1")->fetch_assoc()['c'];
-$todays_appointments  = (int)$conn->query("SELECT COUNT(*) as c FROM appointments WHERE appointment_date = '$today'")->fetch_assoc()['c'];
-$pending_appointments = (int)$conn->query("SELECT COUNT(*) as c FROM appointments WHERE status = 'pending'")->fetch_assoc()['c'];
-$completed_month      = (int)$conn->query("SELECT COUNT(*) as c FROM appointments WHERE status = 'completed' AND appointment_date >= '$month_start'")->fetch_assoc()['c'];
-$revenue_month        = (float)$conn->query("SELECT COALESCE(SUM(amount_paid),0) as c FROM bills WHERE DATE(created_at) >= '$month_start'")->fetch_assoc()['c'];
+$total_patients       = (int)db_val($conn, "SELECT COUNT(*) as c FROM patients WHERE is_active = 1");
+$todays_appointments  = (int)db_val($conn, "SELECT COUNT(*) as c FROM appointments WHERE appointment_date = '$today'");
+$pending_appointments = (int)db_val($conn, "SELECT COUNT(*) as c FROM appointments WHERE status = 'pending'");
+$completed_month      = (int)db_val($conn, "SELECT COUNT(*) as c FROM appointments WHERE status = 'completed' AND appointment_date >= '$month_start'");
+$revenue_month        = (float)db_val($conn, "SELECT COALESCE(SUM(amount_paid),0) as c FROM bills WHERE DATE(created_at) >= '$month_start'", 'c', 0.0);
 
-$patients_last_month  = (int)$conn->query("SELECT COUNT(*) as c FROM patients WHERE DATE(created_at) BETWEEN '$last_month_start' AND '$last_month_end'")->fetch_assoc()['c'];
-$patients_this_month  = (int)$conn->query("SELECT COUNT(*) as c FROM patients WHERE DATE(created_at) >= '$month_start'")->fetch_assoc()['c'];
-$completed_last_month = (int)$conn->query("SELECT COUNT(*) as c FROM appointments WHERE status='completed' AND appointment_date BETWEEN '$last_month_start' AND '$last_month_end'")->fetch_assoc()['c'];
-$revenue_last_month   = (float)$conn->query("SELECT COALESCE(SUM(amount_paid),0) as c FROM bills WHERE DATE(created_at) BETWEEN '$last_month_start' AND '$last_month_end'")->fetch_assoc()['c'];
+$patients_last_month  = (int)db_val($conn, "SELECT COUNT(*) as c FROM patients WHERE DATE(created_at) BETWEEN '$last_month_start' AND '$last_month_end'");
+$patients_this_month  = (int)db_val($conn, "SELECT COUNT(*) as c FROM patients WHERE DATE(created_at) >= '$month_start'");
+$completed_last_month = (int)db_val($conn, "SELECT COUNT(*) as c FROM appointments WHERE status='completed' AND appointment_date BETWEEN '$last_month_start' AND '$last_month_end'");
+$revenue_last_month   = (float)db_val($conn, "SELECT COALESCE(SUM(amount_paid),0) as c FROM bills WHERE DATE(created_at) BETWEEN '$last_month_start' AND '$last_month_end'", 'c', 0.0);
 
-$unpaid_count = (int)$conn->query("SELECT COUNT(*) as c FROM bills WHERE status IN ('unpaid','partial')")->fetch_assoc()['c'];
-$unpaid_total = (float)$conn->query("SELECT COALESCE(SUM(amount_due - amount_paid),0) as c FROM bills WHERE status IN ('unpaid','partial')")->fetch_assoc()['c'];
+$unpaid_count = (int)db_val($conn, "SELECT COUNT(*) as c FROM bills WHERE status IN ('unpaid','partial')");
+$unpaid_total = (float)db_val($conn, "SELECT COALESCE(SUM(amount_due - amount_paid),0) as c FROM bills WHERE status IN ('unpaid','partial')", 'c', 0.0);
 
 $today_schedule = $conn->query("
     SELECT a.appointment_time, a.status, a.appointment_code, a.patient_id,
