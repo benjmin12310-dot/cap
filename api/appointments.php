@@ -157,6 +157,24 @@ if ($action === 'update_status') {
         exit();
     }
 
+    // ── Past-appointment guard ────────────────────────────────────
+    // Confirming an already-passed appointment makes no sense.
+    // completed / cancelled / no-show on past dates are still allowed
+    // (staff may need to clean up records after the fact).
+    if ($status === 'confirmed') {
+        $past_chk = $conn->prepare("SELECT appointment_date FROM appointments WHERE id = ? LIMIT 1");
+        $past_chk->bind_param('i', $id);
+        $past_chk->execute();
+        $past_row = $past_chk->get_result()->fetch_assoc();
+        $past_chk->close();
+        if ($past_row && strtotime($past_row['appointment_date']) < strtotime('today')) {
+            http_response_code(422);
+            echo json_encode(['status' => 'error', 'message' => 'Cannot confirm an appointment that has already passed.']);
+            exit();
+        }
+    }
+    // ─────────────────────────────────────────────────────────────
+
     // ── Dental-record check ───────────────────────────────────────
     // If marking as completed, check whether a dental record exists.
     // Return a warning (not an error) so the frontend can ask the user.
