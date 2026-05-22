@@ -65,6 +65,7 @@ if ($pre_patient_id && !$pre_from_treatment) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        validate_csrf();
         $patient_id     = intval($_POST['patient_id'] ?? 0);
     $appointment_id = intval($_POST['appointment_id'] ?? 0) ?: null;
     $service_id     = intval($_POST['service_id'] ?? 0) ?: null;
@@ -200,6 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="card-body">
                 <form method="POST" id="billForm">
+                    <?php echo csrf_field(); ?>
 
                     <!-- Patient & Appointment -->
                     <div style="background:var(--gray-50);border-radius:8px;padding:16px;margin-bottom:20px;">
