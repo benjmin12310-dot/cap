@@ -11,15 +11,37 @@ $last_month_start = date('Y-m-01', strtotime('-1 month'));
 $last_month_end   = date('Y-m-t',  strtotime('-1 month'));
 
 $total_patients       = (int)$conn->query("SELECT COUNT(*) as c FROM patients WHERE is_active = 1")->fetch_assoc()['c'];
-$todays_appointments  = (int)$conn->query("SELECT COUNT(*) as c FROM appointments WHERE appointment_date = '$today'")->fetch_assoc()['c'];
-$pending_appointments = (int)$conn->query("SELECT COUNT(*) as c FROM appointments WHERE status = 'pending'")->fetch_assoc()['c'];
-$completed_month      = (int)$conn->query("SELECT COUNT(*) as c FROM appointments WHERE status = 'completed' AND appointment_date >= '$month_start'")->fetch_assoc()['c'];
-$revenue_month        = (float)$conn->query("SELECT COALESCE(SUM(amount_paid),0) as c FROM bills WHERE DATE(created_at) >= '$month_start'")->fetch_assoc()['c'];
 
-$patients_last_month  = (int)$conn->query("SELECT COUNT(*) as c FROM patients WHERE DATE(created_at) BETWEEN '$last_month_start' AND '$last_month_end'")->fetch_assoc()['c'];
-$patients_this_month  = (int)$conn->query("SELECT COUNT(*) as c FROM patients WHERE DATE(created_at) >= '$month_start'")->fetch_assoc()['c'];
-$completed_last_month = (int)$conn->query("SELECT COUNT(*) as c FROM appointments WHERE status='completed' AND appointment_date BETWEEN '$last_month_start' AND '$last_month_end'")->fetch_assoc()['c'];
-$revenue_last_month   = (float)$conn->query("SELECT COALESCE(SUM(amount_paid),0) as c FROM bills WHERE DATE(created_at) BETWEEN '$last_month_start' AND '$last_month_end'")->fetch_assoc()['c'];
+// Use prepared statements for date-based queries
+$stmt = $conn->prepare("SELECT COUNT(*) as c FROM appointments WHERE appointment_date = ?");
+$stmt->bind_param('s', $today); $stmt->execute();
+$todays_appointments = (int)$stmt->get_result()->fetch_assoc()['c']; $stmt->close();
+
+$pending_appointments = (int)$conn->query("SELECT COUNT(*) as c FROM appointments WHERE status = 'pending'")->fetch_assoc()['c'];
+
+$stmt = $conn->prepare("SELECT COUNT(*) as c FROM appointments WHERE status = 'completed' AND appointment_date >= ?");
+$stmt->bind_param('s', $month_start); $stmt->execute();
+$completed_month = (int)$stmt->get_result()->fetch_assoc()['c']; $stmt->close();
+
+$stmt = $conn->prepare("SELECT COALESCE(SUM(amount_paid),0) as c FROM bills WHERE DATE(created_at) >= ?");
+$stmt->bind_param('s', $month_start); $stmt->execute();
+$revenue_month = (float)$stmt->get_result()->fetch_assoc()['c']; $stmt->close();
+
+$stmt = $conn->prepare("SELECT COUNT(*) as c FROM patients WHERE DATE(created_at) BETWEEN ? AND ?");
+$stmt->bind_param('ss', $last_month_start, $last_month_end); $stmt->execute();
+$patients_last_month = (int)$stmt->get_result()->fetch_assoc()['c']; $stmt->close();
+
+$stmt = $conn->prepare("SELECT COUNT(*) as c FROM patients WHERE DATE(created_at) >= ?");
+$stmt->bind_param('s', $month_start); $stmt->execute();
+$patients_this_month = (int)$stmt->get_result()->fetch_assoc()['c']; $stmt->close();
+
+$stmt = $conn->prepare("SELECT COUNT(*) as c FROM appointments WHERE status='completed' AND appointment_date BETWEEN ? AND ?");
+$stmt->bind_param('ss', $last_month_start, $last_month_end); $stmt->execute();
+$completed_last_month = (int)$stmt->get_result()->fetch_assoc()['c']; $stmt->close();
+
+$stmt = $conn->prepare("SELECT COALESCE(SUM(amount_paid),0) as c FROM bills WHERE DATE(created_at) BETWEEN ? AND ?");
+$stmt->bind_param('ss', $last_month_start, $last_month_end); $stmt->execute();
+$revenue_last_month = (float)$stmt->get_result()->fetch_assoc()['c']; $stmt->close();
 
 $unpaid_count = (int)$conn->query("SELECT COUNT(*) as c FROM bills WHERE status IN ('unpaid','partial')")->fetch_assoc()['c'];
 $unpaid_total = (float)$conn->query("SELECT COALESCE(SUM(amount_due - amount_paid),0) as c FROM bills WHERE status IN ('unpaid','partial')")->fetch_assoc()['c'];
