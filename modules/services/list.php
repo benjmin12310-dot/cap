@@ -38,6 +38,7 @@ if (isset($_GET['toggle']) && isset($_GET['sid'])) {
 
 // ─── ADD NEW SERVICE ─────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add') {
+        validate_csrf();
     $service_name = trim($_POST['service_name'] ?? '');
     $description  = trim($_POST['description']  ?? '');
     $duration     = intval($_POST['duration_minutes'] ?? 30);
@@ -77,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 // ─── EDIT EXISTING SERVICE ───────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit') {
+    validate_csrf();
     $sid          = secure_int($_POST['sid'] ?? 0);
     $service_name = trim($_POST['service_name'] ?? '');
     $description  = trim($_POST['description']  ?? '');
@@ -266,6 +268,7 @@ $services = $conn->query(
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="POST" action="list.php" id="addServiceForm">
+                    <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="add">
                 <div class="modal-header">
                     <h5 class="modal-title" id="addServiceModalLabel">
@@ -328,6 +331,7 @@ $services = $conn->query(
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="POST" action="list.php" id="editServiceForm">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="edit">
                 <input type="hidden" name="sid" id="editSid">
                 <div class="modal-header">
