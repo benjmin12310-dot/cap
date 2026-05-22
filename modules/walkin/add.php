@@ -239,6 +239,7 @@ $next_label = $slot_data['label'];
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        validate_csrf();
         $first_name  = ucwords(strtolower(trim($_POST['first_name']  ?? '')));
     $last_name   = ucwords(strtolower(trim($_POST['last_name']   ?? '')));
     $phone       = trim($_POST['phone']       ?? '');
@@ -568,6 +569,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['_ajax']) && $error) 
                 </div>
                 <div class="card-body">
                     <form method="POST">
+                    <?php echo csrf_field(); ?>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">First Name <span style="color:var(--danger)">*</span></label>
