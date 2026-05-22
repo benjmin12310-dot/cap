@@ -85,6 +85,7 @@ if ($pre_patient_id) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        validate_csrf();
     $patient_id     = intval($_POST['patient_id'] ?? 0);
     $appointment_id = intval($_POST['appointment_id'] ?? 0) ?: null;
     $service_id     = intval($_POST['service_id'] ?? 0) ?: null;
@@ -307,6 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-header"><i class="bi bi-journal-medical" style="color:var(--blue-500)"></i> Treatment Information</div>
             <div class="card-body">
                 <form method="POST">
+                    <?php echo csrf_field(); ?>
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">Patient <span style="color:var(--danger)">*</span></label>
