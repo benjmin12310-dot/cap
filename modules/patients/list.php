@@ -9,6 +9,7 @@ $page_title = 'Patient Records';
 
 // Hard delete with cascade
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
+        validate_csrf();
     $del_id = secure_int($_POST['delete_id']);
     if ($del_id) {
         // Get name before deleting
@@ -177,6 +178,7 @@ $patients = $conn->query("
             <div class="modal-footer">
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                 <form method="POST" style="margin:0;">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="delete_id" id="deletePatientId">
                     <button type="submit" class="btn btn-sm btn-danger">
                         <i class="bi bi-trash"></i> Yes, Delete
