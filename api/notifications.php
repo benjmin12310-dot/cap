@@ -19,6 +19,9 @@ if ($action === 'mark_read') {
         $stmt->bind_param('i', $id);
         $stmt->execute();
         $stmt->close();
+        // Bust the session cache so the next page load reflects the updated count
+        $cache_key = 'notif_cache_' . $current_user_id;
+        unset($_SESSION[$cache_key . '_time'], $_SESSION[$cache_key . '_count'], $_SESSION[$cache_key . '_recent']);
         echo json_encode(['status' => 'success']);
     } else {
         http_response_code(422);
@@ -33,6 +36,9 @@ if ($action === 'mark_all_read') {
     $stmt->bind_param('i', $current_user_id);
     $stmt->execute();
     $stmt->close();
+    // Bust the session cache so the next page load reflects the updated count
+    $cache_key = 'notif_cache_' . $current_user_id;
+    unset($_SESSION[$cache_key . '_time'], $_SESSION[$cache_key . '_count'], $_SESSION[$cache_key . '_recent']);
     echo json_encode(['status' => 'success']);
     exit();
 }
