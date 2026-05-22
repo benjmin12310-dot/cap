@@ -57,11 +57,9 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
 <style>
 /* ── Dental Record view — mobile ── */
 @media (max-width: 640px) {
-    /* Stack the 2-column layout vertically */
     .dental-view-grid {
         grid-template-columns: 1fr !important;
     }
-    /* Header action buttons: stack vertically */
     .dental-view-actions {
         flex-direction: column !important;
         width: 100% !important;
@@ -70,11 +68,9 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
         width: 100% !important;
         justify-content: center !important;
     }
-    /* Medications/next-visit 2-col: stack */
     .dental-meds-grid {
         grid-template-columns: 1fr !important;
     }
-    /* Patient quick-action buttons: wrap */
     .patient-action-btns {
         flex-wrap: wrap !important;
     }
@@ -83,12 +79,10 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
         justify-content: center !important;
         text-align: center !important;
     }
-    /* Tooth chart: allow horizontal scroll */
     .tooth-chart-scroll {
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch !important;
     }
-    /* Page header: stack on mobile */
     .dental-page-header {
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -115,8 +109,9 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                 </p>
             </div>
             <div class="dental-view-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
-                <a href="list.php?patient_id=<?php echo $r['pid']; ?>" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> All Records for Patient
+                <!-- Goes back to the full Dental / Treatment Records list -->
+                <a href="list.php" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Records
                 </a>
                 <a href="../print/medical_certificate.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-file-earmark-medical"></i> Certificate
@@ -192,8 +187,8 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                         </div>
                         <?php
                         $selected_teeth = array_map('trim', explode(',', $r['tooth_number'] ?? ''));
-                        $upper = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
-                        $lower = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+                        $upper         = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+                        $lower         = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
                         $primary_upper = ['55','54','53','52','51','61','62','63','64','65'];
                         $primary_lower = ['85','84','83','82','81','71','72','73','74','75'];
                         ?>
@@ -265,7 +260,7 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                         </div>
                     </div>
 
-                    <!-- Medications -->
+                    <!-- Medications + Next Visit -->
                     <div class="dental-meds-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div>
                             <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-400);font-weight:600;margin-bottom:4px;">Medications Prescribed</div>
@@ -317,12 +312,10 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                                 <?php endif; ?>
                             </div>
                         </div>
+                        <!-- "All Records" removed here — covered by "Back to Records" at the top -->
                         <div class="patient-action-btns" style="display:flex;gap:8px;flex-wrap:wrap;">
                             <a href="../patients/view.php?id=<?php echo $r['pid']; ?>" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-person"></i> Full Profile
-                            </a>
-                            <a href="list.php?patient_id=<?php echo $r['pid']; ?>" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-journal-medical"></i> All Records
                             </a>
                             <a href="add.php?patient_id=<?php echo $r['pid']; ?>" class="btn btn-sm btn-success">
                                 <i class="bi bi-plus"></i> Add Record
