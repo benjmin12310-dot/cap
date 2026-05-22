@@ -53,6 +53,7 @@ foreach ($days_list as $d) {
 // KEY FIX: Read time values from HIDDEN inputs (not disabled
 // visible inputs) so values are always submitted with the form
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_schedule'])) {
+        validate_csrf();
     foreach ($days_list as $day) {
         // is_open comes from checkbox — only present when checked
         $is_open = isset($_POST['open_' . $day]) ? 1 : 0;
@@ -82,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_schedule'])) {
 
 // BLOCK A DATE
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['block_date'])) {
+    validate_csrf();
     $date   = trim($_POST['blocked_date'] ?? '');
     $reason = trim($_POST['reason'] ?? '');
     if ($date && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
@@ -168,6 +170,7 @@ $blocked_dates = $conn->query(
                 </p>
 
                 <form method="POST" id="scheduleForm">
+                    <?php echo csrf_field(); ?>
                     <div class="table-responsive">
                         <table class="table align-middle" style="font-size:0.875rem;">
                             <thead>
@@ -275,6 +278,7 @@ $blocked_dates = $conn->query(
                     On blocked dates, no appointments can be booked and walk-in will show a closed notice.
                 </p>
                 <form method="POST" class="row g-2 mb-3">
+                <?php echo csrf_field(); ?>
                     <div class="col-md-3">
                         <input type="date" name="blocked_date"
                             class="form-control form-control-sm"
