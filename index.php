@@ -338,10 +338,10 @@ if ($view === 'otp_reset') {
         echo htmlspecialchars($titles[$view] ?? 'Login') . ' | ' . APP_NAME;
         ?>
     </title>
-    <link rel="icon"             type="image/x-icon"      href="<?php echo BASE_URL; ?>assets/img/favicon.ico">
-    <link rel="icon"             type="image/svg+xml"      href="<?php echo BASE_URL; ?>assets/img/favicon.svg">
-    <link rel="icon"             type="image/png" sizes="32x32" href="<?php echo BASE_URL; ?>assets/img/favicon-32.png">
-    <link rel="apple-touch-icon" sizes="180x180"           href="<?php echo BASE_URL; ?>assets/img/favicon-32.png">
+    <link rel="icon"             type="image/x-icon"      href="<?php echo BASE_URL; ?>assets/images/favicon.ico">
+    <link rel="icon"             type="image/svg+xml"      href="<?php echo BASE_URL; ?>assets/images/favicon.svg">
+    <link rel="icon"             type="image/png" sizes="32x32" href="<?php echo BASE_URL; ?>assets/images/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180"           href="<?php echo BASE_URL; ?>assets/images/favicon-32.png">
     <meta name="theme-color" content="#2563eb">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="assets/css/style.css">
