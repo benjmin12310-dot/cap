@@ -14,6 +14,7 @@ $error   = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        validate_csrf();
     $action = $_POST['action'] ?? '';
 
     // ── ADD / EDIT DOCTOR ─────────────────────────────────────────
@@ -297,6 +298,7 @@ $day_labels = [
                         </button>
                         <?php else: ?>
                         <form method="POST" style="display:inline;" onsubmit="return confirmReinstate('<?php echo htmlspecialchars(addslashes($doc['full_name'])); ?>')">
+                    <?php echo csrf_field(); ?>
                             <input type="hidden" name="action" value="reinstate">
                             <input type="hidden" name="doctor_id" value="<?php echo $doc['id']; ?>">
                             <button type="submit" class="btn btn-sm btn-outline-success">
@@ -327,6 +329,7 @@ $day_labels = [
     </div>
     <div class="drawer-body">
         <form method="POST" enctype="multipart/form-data" id="doctorForm">
+                    <?php echo csrf_field(); ?>
             <input type="hidden" name="action" value="save">
             <input type="hidden" name="doctor_id" id="f_doctor_id" value="0">
 
@@ -399,6 +402,7 @@ $day_labels = [
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <form method="POST" id="deleteForm">
+                    <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="doctor_id" id="delete_doctor_id">
                 <div class="modal-header" style="border-bottom:2px solid #dc2626;">
@@ -432,6 +436,7 @@ $day_labels = [
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <form method="POST" id="leaveForm" onsubmit="return validateLeaveDates()">
+                    <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="leave">
                 <input type="hidden" name="doctor_id" id="leave_doctor_id">
                 <div class="modal-header">
