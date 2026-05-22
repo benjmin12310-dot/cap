@@ -20,11 +20,11 @@ $_bootstrap_icons_local= file_exists($_app_root . '/assets/css/bootstrap-icons.c
 <title><?php echo $title; ?></title>
 
 <!-- ── Favicon — shows tooth icon on browser tab ── -->
-<link rel="icon"            type="image/x-icon"     href="<?php echo BASE_URL; ?>assets/img/favicon.ico">
-<link rel="icon"            type="image/svg+xml"     href="<?php echo BASE_URL; ?>assets/img/favicon.svg">
-<link rel="icon"            type="image/png" sizes="32x32" href="<?php echo BASE_URL; ?>assets/img/favicon-32.png">
-<link rel="icon"            type="image/png" sizes="16x16" href="<?php echo BASE_URL; ?>assets/img/favicon-16.png">
-<link rel="apple-touch-icon" sizes="180x180"         href="<?php echo BASE_URL; ?>assets/img/favicon-32.png">
+<link rel="icon"            type="image/x-icon"     href="<?php echo BASE_URL; ?>assets/images/favicon.ico">
+<link rel="icon"            type="image/svg+xml"     href="<?php echo BASE_URL; ?>assets/images/favicon.svg">
+<link rel="icon"            type="image/png" sizes="32x32" href="<?php echo BASE_URL; ?>assets/images/favicon-32.png">
+<link rel="icon"            type="image/png" sizes="16x16" href="<?php echo BASE_URL; ?>assets/images/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180"         href="<?php echo BASE_URL; ?>assets/images/favicon-32.png">
 <meta name="theme-color" content="#2563eb">
 <style>
 /* Use system font — zero load time, looks identical */
