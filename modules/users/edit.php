@@ -19,6 +19,7 @@ $error   = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        validate_csrf();
         $full_name = trim($_POST['full_name'] ?? '');
     $email     = trim($_POST['email'] ?? '');
     $phone     = trim($_POST['phone'] ?? '');
@@ -85,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card" style="max-width:500px;">
             <div class="card-body">
                 <form method="POST">
+                    <?php echo csrf_field(); ?>
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label">Full Name <span class="text-danger">*</span></label>
