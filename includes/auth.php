@@ -10,7 +10,7 @@ ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.gc_maxlifetime',   28800);
 ini_set('session.cookie_lifetime',  0);
 ini_set('session.cookie_path',     '/');
-ini_set('session.cookie_secure', 1);
+ini_set('session.cookie_secure', (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https' ? 1 : 0);
 
 // ── Step 2: Set session name — must be IDENTICAL on every page ────────────
 session_name('dcms_session');
