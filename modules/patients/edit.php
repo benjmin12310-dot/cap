@@ -18,6 +18,7 @@ $error   = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        validate_csrf();
         $first_name  = ucwords(strtolower(trim($_POST['first_name'] ?? '')));
     $last_name   = ucwords(strtolower(trim($_POST['last_name'] ?? '')));
     $middle_name = ucwords(strtolower(trim($_POST['middle_name'] ?? '')));
@@ -133,6 +134,7 @@ if (isset($_GET['delete']) && is_admin()) {
         <div class="card">
             <div class="card-body">
                 <form method="POST">
+                    <?php echo csrf_field(); ?>
 
                     <h6 class="mb-3">Personal Information</h6>
                     <div class="row g-3 mb-3">
