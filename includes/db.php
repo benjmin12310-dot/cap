@@ -60,9 +60,7 @@ if ($conn->connect_error) {
             <code>DB_NAME=cap</code></div>
         <div class="step"><strong>3. Database not imported yet</strong>
             Open <strong>phpMyAdmin</strong> → create database <code>cap</code> → import <code>database/cap.sql</code></div>
-        <p style="margin-top:16px;font-size:0.8em;color:#94a3b8;">
-            Attempted: <code>' . htmlspecialchars($db_user) . '@' . htmlspecialchars($db_host) . '/' . htmlspecialchars($db_name) . '</code>
-        </p>
+        ' . (defined('APP_DEBUG') && APP_DEBUG ? '<p style="margin-top:16px;font-size:0.8em;color:#94a3b8;">Attempted: <code>' . htmlspecialchars($db_user) . '@' . htmlspecialchars($db_host) . '/' . htmlspecialchars($db_name) . '</code></p>' : '') . '
         </div></body></html>';
     }
     exit();
