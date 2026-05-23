@@ -1017,14 +1017,22 @@ function openWalkinDrawer(presetDate){
     document.getElementById('walkinDrawer').classList.add('open');
     document.getElementById('drawerOverlay').classList.add('open');
     document.body.style.overflow='hidden';
-    document.getElementById('walkinDrawerForm').reset();
-    // Set AFTER reset — use requestAnimationFrame so reset() fully completes first
-    requestAnimationFrame(function(){
-        document.getElementById('drawerDate').value = dateToUse;
-        document.getElementById('walkinBtnLabel').textContent = dateToUse === _today ? 'Register Patient' : 'Book Appointment';
-    });
-    document.getElementById('drawerExistingPatientId').value='';
-    document.getElementById('drawerPatientSearch').value='';
+
+    // ── Manual reset (NOT form.reset() — that resets the date to today's hardcoded value) ──
+    document.getElementById('drawerDate').value                    = dateToUse;
+    document.getElementById('drawerExistingPatientId').value       = '';
+    document.getElementById('drawerPatientSearch').value           = '';
+    document.getElementById('drawerFirstName') && (document.getElementById('drawerFirstName').value = '');
+    document.getElementById('drawerLastName')  && (document.getElementById('drawerLastName').value  = '');
+    var phoneEl = document.querySelector('#walkinDrawerForm [name="phone"]');
+    if (phoneEl) phoneEl.value = '';
+    var svcEl = document.querySelector('#walkinDrawerForm [name="service_id"]');
+    if (svcEl) svcEl.selectedIndex = 0;
+    var notesEl = document.querySelector('#walkinDrawerForm textarea[name="notes"]');
+    if (notesEl) notesEl.value = '';
+    // ─────────────────────────────────────────────────────────────────────────
+
+    document.getElementById('walkinBtnLabel').textContent= dateToUse===_today ? 'Register Patient' : 'Book Appointment';
     document.getElementById('drawerPatientResults').style.display='none';
     document.getElementById('drawerPatientSelected').style.display='none';
     _newPatientFieldsVisible=false;
