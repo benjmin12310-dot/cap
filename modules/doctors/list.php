@@ -179,12 +179,140 @@ $day_labels = [
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<head><?php include '../../includes/head.php'; ?></head>
+<head><?php include '../../includes/head.php'; ?>
+<style>
+/* ── Prevent flash of unstyled content ──────────────────── */
+.page-content { visibility: hidden; }
+.page-content.ready { visibility: visible; }
+
+/* ── Doctor Cards ────────────────────────────────────────── */
+.doctor-card {
+    border-radius: 16px;
+    overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.2s;
+    border: 1px solid var(--gray-100);
+}
+.doctor-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.doctor-card--inactive { opacity: 0.65; }
+
+.doctor-card-header {
+    background: linear-gradient(135deg, var(--primary) 0%, #5a8fff 100%);
+    padding: 24px 16px 16px;
+    text-align: center;
+    position: relative;
+}
+.doctor-avatar-wrap { display: inline-block; }
+.doctor-avatar-img {
+    width: 80px; height: 80px;
+    border-radius: 50%; object-fit: cover;
+    border: 3px solid rgba(255,255,255,0.7);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.doctor-avatar-placeholder {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: 3px solid rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; font-weight: 700; color: white; margin: 0 auto;
+}
+.doctor-status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;
+    padding: 3px 10px; border-radius: 20px; margin-top: 8px;
+    text-transform: uppercase;
+}
+.doctor-status-badge.on-duty  { background: rgba(39,174,96,0.15); color:#27ae60; border:1px solid rgba(39,174,96,0.3); }
+.doctor-status-badge.on-leave { background: rgba(231,76,60,0.15);  color:#e74c3c; border:1px solid rgba(231,76,60,0.3); }
+.status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: currentColor;
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.doctor-card-body { padding: 16px; }
+.doctor-name  { font-weight: 700; font-size: 0.95rem; margin-bottom: 2px; }
+.doctor-spec  { font-size: 0.78rem; color: var(--primary); font-weight: 600; margin-bottom: 4px; }
+.doctor-license { font-size: 0.75rem; color: var(--gray-400); margin-bottom: 6px; }
+.doctor-license i { margin-right: 3px; }
+.doctor-bio   { font-size: 0.78rem; color: var(--gray-500); margin-bottom: 10px; line-height: 1.5; }
+
+/* Stats row */
+.doctor-stats-row {
+    display: flex; justify-content: space-between;
+    background: var(--gray-50); border-radius: 8px;
+    padding: 8px 10px; margin-bottom: 8px;
+}
+.ds-stat { text-align: center; flex: 1; }
+.ds-val  { display: block; font-size: 0.9rem; font-weight: 700; color: var(--blue-600); }
+.ds-lbl  { display: block; font-size: 0.65rem; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.doctor-schedule { background: var(--gray-50); border-radius: 8px; padding: 8px 10px; }
+.schedule-time { font-size: 0.75rem; color: var(--gray-600); margin-bottom: 6px; }
+.schedule-time i { margin-right: 4px; }
+.doctor-days { display: flex; flex-wrap: wrap; gap: 3px; }
+.doctor-day-badge {
+    font-size: 0.65rem; font-weight: 600; padding: 2px 7px;
+    border-radius: 4px; background: var(--gray-100); color: var(--gray-400);
+}
+.doctor-day-badge.active { background: var(--blue-500); color: white; }
+
+.doctor-card-footer {
+    padding: 10px 16px 14px;
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+    border-top: 1px solid var(--gray-100);
+}
+
+/* ── Drawer ──────────────────────────────────────────────── */
+.drawer-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.3); z-index: 1040; backdrop-filter: blur(2px);
+}
+.drawer-right {
+    position: fixed; top: 0; right: -520px; width: 480px; height: 100vh;
+    background: var(--white); z-index: 1050;
+    box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+    transition: right 0.3s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column;
+}
+.drawer-right.open { right: 0; }
+.drawer-header {
+    padding: 20px 24px 16px; border-bottom: 1px solid var(--gray-100);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.drawer-header h6 { margin: 0; font-weight: 700; font-size: 1rem; }
+.drawer-close { background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--gray-400); }
+.drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+/* ── Photo Upload Preview ────────────────────────────────── */
+.doctor-photo-preview {
+    width: 96px; height: 96px; border-radius: 50%;
+    border: 2px dashed var(--gray-200);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto; overflow: hidden; background: var(--gray-50);
+}
+.doctor-photo-preview img { width:100%; height:100%; object-fit:cover; }
+
+/* ── Day Toggle Checkboxes ───────────────────────────────── */
+.day-toggle-label { cursor: pointer; }
+.day-toggle-label input[type=checkbox] { display: none; }
+.day-toggle-btn {
+    display: inline-block; padding: 5px 10px; border-radius: 6px;
+    font-size: 0.78rem; font-weight: 600;
+    border: 1.5px solid var(--gray-300); background: var(--gray-100); color: var(--gray-600);
+    transition: all 0.15s;
+}
+.day-toggle-label input:checked + .day-toggle-btn {
+    background: var(--primary); color: white; border-color: var(--primary);
+}
+</style>
+</head>
 <body>
 <?php include '../../includes/sidebar.php'; ?>
 <div class="main-content">
     <?php include '../../includes/header.php'; ?>
-    <div class="page-content">
+    <div class="page-content" id="pageContent">
 
         <div class="page-header">
             <div>
@@ -471,131 +599,13 @@ $day_labels = [
 
 <?php include '../../includes/footer.php'; ?>
 
-<style>
-/* ── Doctor Cards ────────────────────────────────────────── */
-.doctor-card {
-    border-radius: 16px;
-    overflow: hidden;
-    transition: box-shadow 0.2s, transform 0.2s;
-    border: 1px solid var(--gray-100);
-}
-.doctor-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
-.doctor-card--inactive { opacity: 0.65; }
-
-.doctor-card-header {
-    background: linear-gradient(135deg, var(--primary) 0%, #5a8fff 100%);
-    padding: 24px 16px 16px;
-    text-align: center;
-    position: relative;
-}
-.doctor-avatar-wrap { display: inline-block; }
-.doctor-avatar-img {
-    width: 80px; height: 80px;
-    border-radius: 50%; object-fit: cover;
-    border: 3px solid rgba(255,255,255,0.7);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-.doctor-avatar-placeholder {
-    width: 80px; height: 80px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.25);
-    border: 3px solid rgba(255,255,255,0.5);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem; font-weight: 700; color: white; margin: 0 auto;
-}
-.doctor-status-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;
-    padding: 3px 10px; border-radius: 20px; margin-top: 8px;
-    text-transform: uppercase;
-}
-.doctor-status-badge.on-duty  { background: rgba(39,174,96,0.15); color:#27ae60; border:1px solid rgba(39,174,96,0.3); }
-.doctor-status-badge.on-leave { background: rgba(231,76,60,0.15);  color:#e74c3c; border:1px solid rgba(231,76,60,0.3); }
-.status-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: currentColor;
-    animation: pulse-dot 2s ease-in-out infinite;
-}
-@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-.doctor-card-body { padding: 16px; }
-.doctor-name  { font-weight: 700; font-size: 0.95rem; margin-bottom: 2px; }
-.doctor-spec  { font-size: 0.78rem; color: var(--primary); font-weight: 600; margin-bottom: 4px; }
-.doctor-license { font-size: 0.75rem; color: var(--gray-400); margin-bottom: 6px; }
-.doctor-license i { margin-right: 3px; }
-.doctor-bio   { font-size: 0.78rem; color: var(--gray-500); margin-bottom: 10px; line-height: 1.5; }
-
-/* Stats row */
-.doctor-stats-row {
-    display: flex; justify-content: space-between;
-    background: var(--gray-50); border-radius: 8px;
-    padding: 8px 10px; margin-bottom: 8px;
-}
-.ds-stat { text-align: center; flex: 1; }
-.ds-val  { display: block; font-size: 0.9rem; font-weight: 700; color: var(--blue-600); }
-.ds-lbl  { display: block; font-size: 0.65rem; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.04em; }
-
-.doctor-schedule { background: var(--gray-50); border-radius: 8px; padding: 8px 10px; }
-.schedule-time { font-size: 0.75rem; color: var(--gray-600); margin-bottom: 6px; }
-.schedule-time i { margin-right: 4px; }
-.doctor-days { display: flex; flex-wrap: wrap; gap: 3px; }
-.doctor-day-badge {
-    font-size: 0.65rem; font-weight: 600; padding: 2px 7px;
-    border-radius: 4px; background: var(--gray-100); color: var(--gray-400);
-}
-.doctor-day-badge.active { background: var(--blue-500); color: white; }
-
-.doctor-card-footer {
-    padding: 10px 16px 14px;
-    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
-    border-top: 1px solid var(--gray-100);
-}
-
-/* ── Drawer ──────────────────────────────────────────────── */
-.drawer-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.3); z-index: 1040; backdrop-filter: blur(2px);
-}
-.drawer-right {
-    position: fixed; top: 0; right: -520px; width: 480px; height: 100vh;
-    background: var(--white); z-index: 1050;
-    box-shadow: -8px 0 32px rgba(0,0,0,0.12);
-    transition: right 0.3s cubic-bezier(.4,0,.2,1);
-    display: flex; flex-direction: column;
-}
-.drawer-right.open { right: 0; }
-.drawer-header {
-    padding: 20px 24px 16px; border-bottom: 1px solid var(--gray-100);
-    display: flex; align-items: center; justify-content: space-between;
-}
-.drawer-header h6 { margin: 0; font-weight: 700; font-size: 1rem; }
-.drawer-close { background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--gray-400); }
-.drawer-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
-
-/* ── Photo Upload Preview ────────────────────────────────── */
-.doctor-photo-preview {
-    width: 96px; height: 96px; border-radius: 50%;
-    border: 2px dashed var(--gray-200);
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto; overflow: hidden; background: var(--gray-50);
-}
-.doctor-photo-preview img { width:100%; height:100%; object-fit:cover; }
-
-/* ── Day Toggle Checkboxes ───────────────────────────────── */
-.day-toggle-label { cursor: pointer; }
-.day-toggle-label input[type=checkbox] { display: none; }
-.day-toggle-btn {
-    display: inline-block; padding: 5px 10px; border-radius: 6px;
-    font-size: 0.78rem; font-weight: 600;
-    border: 1.5px solid var(--gray-300); background: var(--gray-100); color: var(--gray-600);
-    transition: all 0.15s;
-}
-.day-toggle-label input:checked + .day-toggle-btn {
-    background: var(--primary); color: white; border-color: var(--primary);
-}
-</style>
-
 <script>
+// ── Make content visible once styles are guaranteed loaded ────
+document.addEventListener('DOMContentLoaded', function() {
+    var pc = document.getElementById('pageContent');
+    if (pc) pc.classList.add('ready');
+});
+
 // ── Drawer ────────────────────────────────────────────────────
 function openDrawer() {
     document.getElementById('doctorDrawerOverlay').style.display = 'block';
