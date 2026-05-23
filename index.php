@@ -209,8 +209,16 @@ if ($view === 'otp_reset') {
                         ];
                         unset($_SESSION['otp_reset_attempts']);
 
-                        send_otp_sms($user_row['phone'], $otp);
-                        send_otp_email($user_row['email'], $otp, $user_row['full_name']);
+                        $sms_sent   = send_otp_sms($user_row['phone'], $otp);
+                        $email_sent = send_otp_email($user_row['email'], $otp, $user_row['full_name']);
+
+                        // DEMO MODE: if neither SMS nor email could be sent (API keys not configured),
+                        // show the OTP directly on-screen so the system can still be tested/demonstrated.
+                        $no_sms_key   = empty($_ENV['SEMAPHORE_API_KEY']);
+                        $no_email_key = empty($_ENV['RESEND_API_KEY']);
+                        if ($no_sms_key && $no_email_key) {
+                            $_SESSION['pending_reset_otp']['demo_mode'] = true;
+                        }
 
                         log_action($conn, $user_row['id'], $user_row['full_name'], 'Password Reset OTP Sent', 'auth', $user_row['id'], 'OTP sent via SMS and Email.');
                         header('Location: index.php?view=otp_reset'); exit();
@@ -511,6 +519,22 @@ if ($view === 'otp_reset') {
     <div class="form-subheading">Enter the 6-digit code sent to your phone and email</div>
     <?php if ($error): ?>
         <div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?></div>
+    <?php endif; ?>
+    <?php if (!empty($_SESSION['pending_reset_otp']['demo_mode'])): ?>
+    <div style="background:#fefce8;border:2px dashed #f59e0b;border-radius:12px;padding:14px 18px;margin-bottom:18px;text-align:center;">
+        <div style="font-size:0.72rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">
+            <i class="bi bi-info-circle-fill"></i> Demo Mode — No Email/SMS Configured
+        </div>
+        <div style="font-size:0.8rem;color:#78350f;margin-bottom:8px;">Your one-time code is shown below for testing:</div>
+        <div style="font-size:2rem;font-weight:800;letter-spacing:0.45em;color:#1d4ed8;
+                    background:#eff6ff;padding:10px 20px;border-radius:8px;display:inline-block;">
+            <?php echo htmlspecialchars($_SESSION['pending_reset_otp']['code']); ?>
+        </div>
+        <div style="font-size:0.72rem;color:#92400e;margin-top:8px;">
+            <i class="bi bi-clock"></i> Expires in 5 minutes &nbsp;·&nbsp;
+            Copy this code and paste it in the field below.
+        </div>
+    </div>
     <?php endif; ?>
     <form method="POST" action="index.php?view=otp_reset">
         <div style="margin-bottom:20px;">
