@@ -70,49 +70,77 @@ $success = '';
 // ============================================================
 if ($view === 'otp_reset') {
 
-    if (empty($_SESSION['pending_reset_otp'])) {
-        ?><!DOCTYPE html><html lang="en"><head>
-        <meta charset="UTF-8"><meta http-equiv="refresh" content="4;url=index.php">
-        <title>Check your contacts | <?php echo APP_NAME; ?></title>
-        <link rel="stylesheet" href="assets/css/style.css">
-        </head><body class="login-page">
-        <div style="text-align:center;padding:60px 20px;">
-            <i class="bi bi-envelope-check" style="font-size:3rem;color:var(--blue-500);"></i>
-            <h5 style="margin-top:16px;">Check your phone &amp; email</h5>
-            <p style="color:var(--gray-500);font-size:0.9rem;">If an account with that username or email exists, an OTP has been sent.<br>Redirecting to login…</p>
-        </div>
-        <link rel="stylesheet" href="assets/css/bootstrap-icons.css">
-        </body></html><?php
-        exit();
+    // ── DATABASE-DRIVEN OTP — no sessions needed (Railway-safe) ──
+    // The reset_token is passed in the URL as ?t=TOKEN
+    // The OTP itself is stored in otp_code / otp_expires columns in the users table.
+
+    $otp_token   = trim($_GET['t'] ?? $_POST['t'] ?? '');
+    $otp_user    = null;   // user row from DB
+    $demo_otp    = '';     // plain OTP shown on-screen in demo mode
+
+    // Look up the user by token (valid = token not expired)
+    if (!empty($otp_token)) {
+        $now_str = date('Y-m-d H:i:s');
+        $lu = $conn->prepare(
+            "SELECT id, full_name, otp_code, otp_expires
+             FROM users
+             WHERE reset_token = ? AND reset_expires > ? AND is_active = 1
+             LIMIT 1"
+        );
+        if ($lu) {
+            $lu->bind_param('ss', $otp_token, $now_str);
+            $lu->execute();
+            $otp_user = $lu->get_result()->fetch_assoc();
+            $lu->close();
+        }
+    }
+
+    // If no valid token → redirect back to forgot (no confusing dark page)
+    if (empty($otp_user) && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: index.php?view=forgot'); exit();
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($_POST['resend_otp'])) {
-            unset($_SESSION['pending_reset_otp'], $_SESSION['otp_reset_attempts']);
             header('Location: index.php?view=forgot'); exit();
         }
 
         $entered = trim($_POST['otp'] ?? '');
-        $pending = $_SESSION['pending_reset_otp'];
 
-        $_SESSION['otp_reset_attempts'] = ($_SESSION['otp_reset_attempts'] ?? 0) + 1;
-
-        if ($_SESSION['otp_reset_attempts'] > OTP_MAX_ATTEMPTS) {
-            unset($_SESSION['pending_reset_otp'], $_SESSION['otp_reset_attempts']);
-            $error = 'Too many incorrect attempts. Please request a new OTP.';
+        if (empty($otp_user)) {
+            $error = 'Invalid or expired link. Please request a new OTP.';
             $view  = 'forgot';
-        } elseif (time() > $pending['expires']) {
-            unset($_SESSION['pending_reset_otp'], $_SESSION['otp_reset_attempts']);
-            $error = 'Your OTP has expired. Please request a new one.';
-            $view  = 'forgot';
-        } elseif ($entered !== $pending['code']) {
-            $remaining = OTP_MAX_ATTEMPTS - $_SESSION['otp_reset_attempts'];
-            $error = "Incorrect OTP. $remaining attempt(s) remaining.";
         } else {
-            unset($_SESSION['pending_reset_otp'], $_SESSION['otp_reset_attempts']);
-            $token = $pending['token'];
-            header('Location: index.php?view=reset&token=' . urlencode($token)); exit();
+            $otp_exp_ts = strtotime($otp_user['otp_expires'] ?? '0');
+
+            $_SESSION['otp_reset_attempts'] = ($_SESSION['otp_reset_attempts'] ?? 0) + 1;
+
+            if ($_SESSION['otp_reset_attempts'] > OTP_MAX_ATTEMPTS) {
+                $conn->query("UPDATE users SET otp_code = NULL, otp_expires = NULL WHERE id = " . (int)$otp_user['id']);
+                unset($_SESSION['otp_reset_attempts']);
+                $error = 'Too many incorrect attempts. Please request a new OTP.';
+                $view  = 'forgot';
+            } elseif (time() > $otp_exp_ts) {
+                $conn->query("UPDATE users SET otp_code = NULL, otp_expires = NULL WHERE id = " . (int)$otp_user['id']);
+                unset($_SESSION['otp_reset_attempts']);
+                $error = 'Your OTP has expired. Please request a new one.';
+                $view  = 'forgot';
+            } elseif ($entered !== $otp_user['otp_code']) {
+                $remaining = OTP_MAX_ATTEMPTS - $_SESSION['otp_reset_attempts'];
+                $error = "Incorrect OTP. $remaining attempt(s) remaining.";
+            } else {
+                // Correct! Wipe OTP from DB so it can't be reused
+                $conn->query("UPDATE users SET otp_code = NULL, otp_expires = NULL WHERE id = " . (int)$otp_user['id']);
+                unset($_SESSION['otp_reset_attempts']);
+                header('Location: index.php?view=reset&token=' . urlencode($otp_token)); exit();
+            }
         }
+    }
+
+    // Demo mode: show OTP on-screen when no API keys are configured
+    $no_api_keys = empty($_ENV['SEMAPHORE_API_KEY']) && empty($_ENV['RESEND_API_KEY']);
+    if ($no_api_keys && !empty($otp_user['otp_code'])) {
+        $demo_otp = $otp_user['otp_code'];
     }
 
 // ============================================================
@@ -170,10 +198,17 @@ if ($view === 'otp_reset') {
     $db_res  = $conn->query("SELECT DATABASE()");
     $db_name = $db_res ? $db_res->fetch_row()[0] : '';
     if ($db_name) {
-        $r1 = $conn->query("SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='".addslashes($db_name)."' AND TABLE_NAME='users' AND COLUMN_NAME='reset_token' LIMIT 1");
-        $r2 = $conn->query("SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='".addslashes($db_name)."' AND TABLE_NAME='users' AND COLUMN_NAME='reset_expires' LIMIT 1");
-        if ($r1 && $r1->num_rows === 0) $conn->query("ALTER TABLE users ADD COLUMN reset_token   VARCHAR(64) DEFAULT NULL");
-        if ($r2 && $r2->num_rows === 0) $conn->query("ALTER TABLE users ADD COLUMN reset_expires DATETIME    DEFAULT NULL");
+        $dbs = addslashes($db_name);
+        $needed = [
+            'reset_token'  => "VARCHAR(64) DEFAULT NULL",
+            'reset_expires'=> "DATETIME DEFAULT NULL",
+            'otp_code'     => "VARCHAR(6) DEFAULT NULL",
+            'otp_expires'  => "DATETIME DEFAULT NULL",
+        ];
+        foreach ($needed as $col => $def) {
+            $r = $conn->query("SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='$dbs' AND TABLE_NAME='users' AND COLUMN_NAME='$col' LIMIT 1");
+            if ($r && $r->num_rows === 0) $conn->query("ALTER TABLE users ADD COLUMN $col $def");
+        }
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -192,42 +227,34 @@ if ($view === 'otp_reset') {
                 $stmt->close();
 
                 if ($user_row) {
-                    $token   = bin2hex(random_bytes(32));
-                    $expires = date('Y-m-d H:i:s', time() + RESET_TOKEN_TTL);
-                    $upd     = $conn->prepare("UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?");
+                    $token      = bin2hex(random_bytes(32));
+                    $expires    = date('Y-m-d H:i:s', time() + RESET_TOKEN_TTL);
+                    $otp        = generate_otp();           // plain 6-digit code
+                    $otp_exp    = date('Y-m-d H:i:s', time() + OTP_TTL);
+
+                    // Store token AND otp_code in the database — Railway-safe, no sessions needed
+                    $upd = $conn->prepare(
+                        "UPDATE users SET reset_token = ?, reset_expires = ?, otp_code = ?, otp_expires = ? WHERE id = ?"
+                    );
                     if ($upd) {
-                        $upd->bind_param('ssi', $token, $expires, $user_row['id']);
+                        $upd->bind_param('ssssi', $token, $expires, $otp, $otp_exp, $user_row['id']);
                         $upd->execute();
                         $upd->close();
 
-                        $otp = generate_otp();
-                        $_SESSION['pending_reset_otp'] = [
-                            'code'    => $otp,
-                            'expires' => time() + OTP_TTL,
-                            'token'   => $token,
-                            'user_id' => $user_row['id'],
-                        ];
-                        unset($_SESSION['otp_reset_attempts']);
-
-                        $sms_sent   = send_otp_sms($user_row['phone'], $otp);
-                        $email_sent = send_otp_email($user_row['email'], $otp, $user_row['full_name']);
-
-                        // DEMO MODE: if neither SMS nor email could be sent (API keys not configured),
-                        // show the OTP directly on-screen so the system can still be tested/demonstrated.
-                        $no_sms_key   = empty($_ENV['SEMAPHORE_API_KEY']);
-                        $no_email_key = empty($_ENV['RESEND_API_KEY']);
-                        if ($no_sms_key && $no_email_key) {
-                            $_SESSION['pending_reset_otp']['demo_mode'] = true;
-                        }
+                        send_otp_sms($user_row['phone'], $otp);
+                        send_otp_email($user_row['email'], $otp, $user_row['full_name']);
 
                         log_action($conn, $user_row['id'], $user_row['full_name'], 'Password Reset OTP Sent', 'auth', $user_row['id'], 'OTP sent via SMS and Email.');
-                        header('Location: index.php?view=otp_reset'); exit();
+
+                        // Pass the reset_token in the URL so otp_reset can look up the OTP from DB
+                        header('Location: index.php?view=otp_reset&t=' . urlencode($token)); exit();
                     } else {
                         $error = 'Failed to generate reset token. Please try again.';
                     }
                 }
                 if (empty($error)) {
-                    header('Location: index.php?view=otp_reset'); exit();
+                    // No matching user found — redirect to forgot with a generic notice (no enumeration)
+                    header('Location: index.php?view=forgot&sent=1'); exit();
                 }
             }
         }
@@ -520,7 +547,7 @@ if ($view === 'otp_reset') {
     <?php if ($error): ?>
         <div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?></div>
     <?php endif; ?>
-    <?php if (!empty($_SESSION['pending_reset_otp']['demo_mode'])): ?>
+    <?php if (!empty($demo_otp)): ?>
     <div style="background:#fefce8;border:2px dashed #f59e0b;border-radius:12px;padding:14px 18px;margin-bottom:18px;text-align:center;">
         <div style="font-size:0.72rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">
             <i class="bi bi-info-circle-fill"></i> Demo Mode — No Email/SMS Configured
@@ -528,15 +555,15 @@ if ($view === 'otp_reset') {
         <div style="font-size:0.8rem;color:#78350f;margin-bottom:8px;">Your one-time code is shown below for testing:</div>
         <div style="font-size:2rem;font-weight:800;letter-spacing:0.45em;color:#1d4ed8;
                     background:#eff6ff;padding:10px 20px;border-radius:8px;display:inline-block;">
-            <?php echo htmlspecialchars($_SESSION['pending_reset_otp']['code']); ?>
+            <?php echo htmlspecialchars($demo_otp); ?>
         </div>
         <div style="font-size:0.72rem;color:#92400e;margin-top:8px;">
-            <i class="bi bi-clock"></i> Expires in 5 minutes &nbsp;·&nbsp;
-            Copy this code and paste it in the field below.
+            <i class="bi bi-clock"></i> Expires in 5 minutes &nbsp;·&nbsp; Copy this code and paste it below.
         </div>
     </div>
     <?php endif; ?>
     <form method="POST" action="index.php?view=otp_reset">
+        <input type="hidden" name="t" value="<?php echo htmlspecialchars($otp_token ?? ''); ?>">
         <div style="margin-bottom:20px;">
             <label class="form-label">Verification Code</label>
             <input type="text" name="otp" class="form-control"
@@ -565,6 +592,9 @@ if ($view === 'otp_reset') {
     <div class="form-subheading">Enter your username or email to receive an OTP</div>
     <?php if ($error): ?>
         <div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?></div>
+    <?php endif; ?>
+    <?php if (!empty($_GET['sent'])): ?>
+        <div class="alert alert-info"><i class="bi bi-info-circle"></i> If that username or email exists, an OTP has been sent.</div>
     <?php endif; ?>
     <?php if ($success): ?>
         <div class="alert alert-success"><i class="bi bi-check-circle-fill"></i> <?php echo htmlspecialchars($success); ?></div>
