@@ -204,12 +204,13 @@ $all_docs_dw = $conn->query("SELECT id, full_name, specialization, schedule_days
   background:var(--white);
   transition:background 0.15s;
   position:relative;
+  cursor:pointer;
 }
 .cal-cell:nth-child(7n){border-right:none;}
 .cal-cell:nth-child(7n+1) .day-num,
 .cal-cell:nth-child(7n) .day-num{color:#e11d48;} /* Sun/Sat in red */
 
-.cal-cell.empty{background:var(--gray-50);opacity:0.6;}
+.cal-cell.empty{background:var(--gray-50);opacity:0.6;cursor:default;}
 .cal-cell.today{background:linear-gradient(135deg,var(--blue-50),var(--blue-100))!important;}
 .cal-cell.today::before{
   content:'';position:absolute;top:0;left:0;right:0;height:3px;
@@ -217,7 +218,7 @@ $all_docs_dw = $conn->query("SELECT id, full_name, specialization, schedule_days
 }
 .cal-cell.blocked{background:var(--danger-bg);}
 .cal-cell.has-appts{cursor:pointer;}
-.cal-cell.has-appts:hover{background:var(--blue-50);}
+.cal-cell:hover:not(.empty){background:var(--blue-50);}
 
 /* ── Day Number ──────────────────────────────────────────── */
 .day-num{
@@ -544,8 +545,8 @@ $all_docs_dw = $conn->query("SELECT id, full_name, specialization, schedule_days
         $dam=$appts_by_date[$ds]??[]; $ha=!empty($dam)||$ib;
         $cc=implode(' ',array_filter(['cal-cell',$it?'today':'',$ib?'blocked':'',$ha?'has-appts':'']));
     ?>
-    <div class="<?php echo $cc;?>" onclick="<?php echo $ha?"viewDay('$ds')" : "goToDay('$ds')";?>">
-        <div class="day-num <?php echo $it?'is-today':'';?>">
+    <div class="<?php echo $cc;?>" onclick="goToDay('<?php echo $ds;?>')">
+        <div class="day-num <?php echo $it?'is-today':'';?>" <?php if($ha): ?>onclick="event.stopPropagation();viewDay('<?php echo $ds;?>')" style="cursor:pointer;" title="View appointments"<?php endif;?>>
             <?php if($it): ?><span class="today-dot"><?php echo $d;?></span><?php else: ?><?php echo $d;?><?php endif;?>
         </div>
         <?php if($ib): ?><span class="blocked-tag">🚫 Closed</span><?php endif;?>
@@ -776,6 +777,7 @@ $show_now=($day_date===$today&&$now_h>=$open_h&&$now_h<$close_h);
             </div>
             <div class="modal-body" id="dayModalBody" style="padding:18px 22px;"></div>
             <div class="modal-footer" style="border-top:1px solid var(--gray-200);padding:12px 22px;">
+                <button type="button" class="btn btn-sm btn-success" onclick="dayModal.hide();setTimeout(()=>openWalkinDrawer(_viewingDate),350);"><i class="bi bi-plus-circle-fill"></i> New Appointment</button>
                 <a id="dayListLink" href="#" class="btn btn-sm btn-outline-primary"><i class="bi bi-list-ul"></i> Full List</a>
                 <a id="dayViewLink" href="#" class="btn btn-sm btn-primary"><i class="bi bi-calendar-day"></i> Day View</a>
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
@@ -923,7 +925,9 @@ var apptModal=new bootstrap.Modal(document.getElementById('apptModal'));
 var _curAppt=null;
 function ucwords(s){return s.toLowerCase().replace(/(^|\s)\S/g,l=>l.toUpperCase());}
 function goToDay(d){ openWalkinDrawer(d); }
+var _viewingDate=null;
 function viewDay(date){
+    _viewingDate=date;
     var appts=allAppts[date]||[];
     var d=new Date(date+'T12:00:00');
     var label=d.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
