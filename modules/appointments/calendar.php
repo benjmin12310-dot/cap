@@ -1013,13 +1013,16 @@ var _patientSearchTimer = null;
 var _newPatientFieldsVisible = false;
 
 function openWalkinDrawer(presetDate){
+    var dateToUse = presetDate || _today;
     document.getElementById('walkinDrawer').classList.add('open');
     document.getElementById('drawerOverlay').classList.add('open');
     document.body.style.overflow='hidden';
     document.getElementById('walkinDrawerForm').reset();
-    var dateToUse = presetDate || _today;
-    document.getElementById('drawerDate').value=dateToUse;
-    document.getElementById('walkinBtnLabel').textContent= dateToUse===_today ? 'Register Patient' : 'Book Appointment';
+    // Set AFTER reset — use requestAnimationFrame so reset() fully completes first
+    requestAnimationFrame(function(){
+        document.getElementById('drawerDate').value = dateToUse;
+        document.getElementById('walkinBtnLabel').textContent = dateToUse === _today ? 'Register Patient' : 'Book Appointment';
+    });
     document.getElementById('drawerExistingPatientId').value='';
     document.getElementById('drawerPatientSearch').value='';
     document.getElementById('drawerPatientResults').style.display='none';
