@@ -830,6 +830,7 @@ $show_now=($day_date===$today&&$now_h>=$open_h&&$now_h<$close_h);
     <div class="drawer-body">
         <form id="walkinDrawerForm" autocomplete="off">
             <input type="hidden" name="_ajax" value="1">
+            <?php echo csrf_field(); ?>
             <input type="hidden" name="existing_patient_id" id="drawerExistingPatientId" value="">
             <div class="row g-3">
                 <div class="col-12">
