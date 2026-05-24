@@ -484,9 +484,11 @@ $all_docs_dw = $conn->query("SELECT id, full_name, specialization, schedule_days
     <div class="view-toggle" style="margin-left:10px;">
         <a href="calendar.php?view=month&month=<?php echo $month; ?>&year=<?php echo $year; ?>" class="<?php echo $view==='month'?'active':''; ?>"><i class="bi bi-calendar3"></i> Month</a>
         <?php
+            // When already in week/day, keep context so navigation stays in sync.
+            // When coming FROM month view, always jump to today (not May 1st).
             if ($view === 'week')       $ctx = $week_start;
             elseif ($view === 'day')    $ctx = $day_date;
-            else                        $ctx = $month_start;
+            else                        $ctx = $today;  // ← was $month_start (always sent to May 1)
         ?>
         <a href="calendar.php?view=week&date=<?php echo $ctx; ?>" class="<?php echo $view==='week'?'active':''; ?>"><i class="bi bi-calendar-week"></i> Week</a>
         <a href="calendar.php?view=day&date=<?php echo $ctx; ?>" class="<?php echo $view==='day'?'active':''; ?>"><i class="bi bi-calendar-day"></i> Day</a>
