@@ -27,13 +27,16 @@ if (!in_array($status_filter, $allowed_statuses)) $status_filter = '';
 // Validate date format (YYYY-MM-DD) — reject anything that doesn't match
 if ($date_filter && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_filter)) $date_filter = '';
 
+// Build WHERE using only whitelisted/validated values — safe to interpolate
 $where = "WHERE 1=1";
 if ($status_filter) $where .= " AND a.status = '" . $conn->real_escape_string($status_filter) . "'";
 if ($date_filter)   $where .= " AND a.appointment_date = '" . $conn->real_escape_string($date_filter) . "'";
-if ($doctor_filter) $where .= " AND a.doctor_id = $doctor_filter";
+if ($doctor_filter) $where .= " AND a.doctor_id = " . intval($doctor_filter);
 if ($search) {
-    $s = $conn->real_escape_string($search);
-    $where .= " AND (p.first_name LIKE '%$s%' OR p.last_name LIKE '%$s%' OR a.appointment_code LIKE '%$s%')";
+    $s = $conn->real_escape_string(trim($search));
+    $where .= " AND (p.first_name LIKE '%$s%' OR p.last_name LIKE '%$s%'"
+            . " OR a.appointment_code LIKE '%$s%'"
+            . " OR CONCAT(p.first_name,' ',p.last_name) LIKE '%$s%')";
 }
 
 $per_page    = 20;
@@ -142,6 +145,9 @@ $appointments = $conn->query("
                     <i class="bi bi-calendar3" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:0.82rem;pointer-events:none;"></i>
                     <input type="date" name="date" style="padding:8px 12px 8px 32px;border:1.5px solid var(--gray-200);border-radius:9px;font-size:0.82rem;outline:none;transition:border 0.15s;" value="<?php echo htmlspecialchars($date_filter); ?>" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
                 </div>
+                <a href="list.php?<?php echo $status_filter?'status='.urlencode($status_filter).'&':''; ?>date=<?php echo date('Y-m-d'); ?>" style="padding:8px 14px;border-radius:9px;border:1.5px solid <?php echo $date_filter===date('Y-m-d')?'#2563eb':'#e2e8f0'; ?>;background:<?php echo $date_filter===date('Y-m-d')?'#eff6ff':'var(--white)'; ?>;color:<?php echo $date_filter===date('Y-m-d')?'#2563eb':'#64748b'; ?>;font-size:0.78rem;font-weight:700;text-decoration:none;white-space:nowrap;">
+                    Today
+                </a>
                 <?php if (!empty($all_doctors)): ?>
                 <select name="doctor_id" style="padding:8px 14px;border:1.5px solid var(--gray-200);border-radius:9px;font-size:0.82rem;outline:none;background:var(--white);color:var(--gray-600);transition:border 0.15s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
                     <option value="">All Doctors</option>
@@ -556,7 +562,6 @@ function doConfirmAppt() {
     <div class="drawer-body">
         <form id="walkinDrawerForm" autocomplete="off">
             <input type="hidden" name="_ajax" value="1">
-            <?php echo csrf_field(); ?>
             <input type="hidden" name="existing_patient_id" id="drawerExistingPatientId" value="">
             <div class="row g-3">
 
@@ -564,7 +569,7 @@ function doConfirmAppt() {
                 <div class="col-12">
                     <label class="form-label" style="font-weight:600;">Appointment Date <span style="color:var(--danger)">*</span></label>
                     <input type="date" name="appointment_date" id="drawerDate" class="form-control"
-                        min="<?php echo date('Y-m-d'); ?>" value="<?php echo date('Y-m-d'); ?>">
+                        value="<?php echo date('Y-m-d'); ?>">
                     <div style="font-size:0.72rem;color:var(--gray-500);margin-top:4px;">Today = walk-in. Future date = advance booking.</div>
                 </div>
 
@@ -651,8 +656,14 @@ function doConfirmAppt() {
 </div>
 
 <div id="walkinToast" style="display:none;position:fixed;bottom:28px;right:28px;z-index:2000;background:var(--white);border:1.5px solid var(--success-border);border-radius:12px;padding:14px 20px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-width:360px;animation:slideToast 0.3s ease;">
-    <div style="font-weight:700;margin-bottom:4px;" id="walkinToastTitle"></div>
-    <div style="font-size:0.85rem;color:var(--gray-600);" id="walkinToastMsg"></div>
+    <div style="display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:1.4rem;">✅</span>
+        <div style="flex:1;">
+            <div style="font-weight:700;margin-bottom:4px;color:#166534;" id="walkinToastTitle"></div>
+            <div style="font-size:0.85rem;color:var(--gray-600);" id="walkinToastMsg"></div>
+        </div>
+        <button onclick="document.getElementById('walkinToast').style.display='none'" style="background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:1rem;padding:0;margin-left:4px;">✕</button>
+    </div>
 </div>
 
 <script>
@@ -660,20 +671,24 @@ var _today = '<?php echo date('Y-m-d'); ?>';
 var _baseUrl = '<?php echo BASE_URL; ?>';
 var _patientSearchTimer = null;
 
-function openWalkinDrawer() {
+function openWalkinDrawer(presetDate) {
+    var dateToUse = presetDate || _today;
     document.getElementById('walkinDrawer').classList.add('open');
     document.getElementById('drawerOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
     document.getElementById('walkinDrawerForm').reset();
-    document.getElementById('drawerDate').value = _today;
-    document.getElementById('walkinBtnLabel').textContent = 'Register Patient';
+    // Set date AFTER reset completes so reset() doesn't overwrite it
+    requestAnimationFrame(function(){
+        document.getElementById('drawerDate').value = dateToUse;
+        document.getElementById('walkinBtnLabel').textContent = dateToUse === _today ? 'Register Patient' : 'Book Appointment';
+    });
     document.getElementById('drawerExistingPatientId').value = '';
     document.getElementById('drawerPatientSearch').value = '';
     document.getElementById('drawerPatientResults').style.display = 'none';
     document.getElementById('drawerPatientSelected').style.display = 'none';
     showNewPatientFields(true);
     hideDrawerAlert();
-    loadDrawerDateData(_today);
+    loadDrawerDateData(dateToUse);
 }
 function closeWalkinDrawer() {
     document.getElementById('walkinDrawer').classList.remove('open');
@@ -940,6 +955,7 @@ function submitWalkin() {
             document.getElementById('walkinToastTitle').textContent = toastTitle;
             document.getElementById('walkinToastMsg').innerHTML = toastMsg;
             document.getElementById('walkinToast').style.display = 'block';
+            setTimeout(function(){ document.getElementById('walkinToast').style.display='none'; }, 6000);
             form.reset();
             closeWalkinDrawer();
             setTimeout(() => { location.reload(); }, 2500);
