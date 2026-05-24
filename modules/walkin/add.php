@@ -254,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $manual_time      = trim($_POST['manual_time']      ?? ''); // fallback (legacy)
     $appointment_date = trim($_POST['appointment_date'] ?? '');
     $today            = date('Y-m-d');
-    $appointment_date = (!empty($appointment_date) && $appointment_date >= $today) ? $appointment_date : $today;
+    $appointment_date = (!empty($appointment_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $appointment_date)) ? $appointment_date : $today;
     $is_today_appt    = ($appointment_date === $today);
     // Prefer selected_time (slot picker) over manual_time
     $slot_input = !empty($selected_time) ? $selected_time : $manual_time;
