@@ -126,7 +126,7 @@ if ($view === 'week') {
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $ref_date)) $ref_date = $today;
     $dow        = date('N', strtotime($ref_date)); // 1=Mon 7=Sun
     $week_start = date('Y-m-d', strtotime($ref_date . ' -' . ($dow - 1) . ' days'));
-    $week_end   = date('Y-m-d', strtotime($week_start . ' +6 days')); // Mon–Sun
+    $week_end   = date('Y-m-d', strtotime($week_start . ' +5 days')); // Mon–Sat
     $prev_week  = date('Y-m-d', strtotime($week_start . ' -7 days'));
     $next_week  = date('Y-m-d', strtotime($week_start . ' +7 days'));
     $week_label = date('M d', strtotime($week_start)) . ' – ' . date('M d, Y', strtotime($week_end));
@@ -507,7 +507,7 @@ $all_docs_dw = $conn->query("SELECT id, full_name, specialization, schedule_days
     <a href="calendar.php?view=month&month=<?php echo $prev_month; ?>&year=<?php echo $prev_year; ?>" class="cal-nav-btn"><i class="bi bi-chevron-left"></i></a>
     <span class="cal-nav-label"><?php echo $month_label; ?></span>
     <a href="calendar.php?view=month&month=<?php echo $next_month; ?>&year=<?php echo $next_year; ?>" class="cal-nav-btn"><i class="bi bi-chevron-right"></i></a>
-    <a href="calendar.php?view=day&date=<?php echo $today;?>" class="cal-today-btn">Today</a>
+    <a href="calendar.php?view=day&date=<?php echo $today;?>" class="cal-today-btn" style="white-space:nowrap;">📅 Today</a>
     <span style="margin-left:auto;font-size:0.78rem;color:var(--gray-400);font-weight:600;">
         <?php $total_this_month = array_sum(array_map('count', $appts_by_date)); ?>
         <?php echo $total_this_month; ?> appointment<?php echo $total_this_month !== 1 ? 's' : ''; ?> this month
@@ -544,7 +544,7 @@ $all_docs_dw = $conn->query("SELECT id, full_name, specialization, schedule_days
         $dam=$appts_by_date[$ds]??[]; $ha=!empty($dam)||$ib;
         $cc=implode(' ',array_filter(['cal-cell',$it?'today':'',$ib?'blocked':'',$ha?'has-appts':'']));
     ?>
-    <div class="<?php echo $cc;?>" onclick="openWalkinDrawer('<?php echo $ds;?>')">
+    <div class="<?php echo $cc;?>" data-cal-date="<?php echo $ds;?>" onclick="handleCalCellClick(event, this)">
         <div class="day-num <?php echo $it?'is-today':'';?>">
             <?php if($it): ?><span class="today-dot"><?php echo $d;?></span><?php else: ?><?php echo $d;?><?php endif;?>
         </div>
@@ -776,8 +776,6 @@ $show_now=($day_date===$today&&$now_h>=$open_h&&$now_h<$close_h);
             </div>
             <div class="modal-body" id="dayModalBody" style="padding:18px 22px;"></div>
             <div class="modal-footer" style="border-top:1px solid var(--gray-200);padding:12px 22px;">
-                <a id="dayListLink" href="#" class="btn btn-sm btn-outline-primary"><i class="bi bi-list-ul"></i> Full List</a>
-                <a id="dayViewLink" href="#" class="btn btn-sm btn-primary"><i class="bi bi-calendar-day"></i> Day View</a>
                 <button id="dayModalAddBtn" type="button" class="btn btn-sm btn-success" onclick="dayModal.hide();setTimeout(()=>openWalkinDrawer(_dayModalDate),200)"><i class="bi bi-plus-circle"></i> Add Appointment</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             </div>
@@ -905,7 +903,7 @@ $show_now=($day_date===$today&&$now_h>=$open_h&&$now_h<$close_h);
         <button type="button" class="btn btn-outline-secondary" onclick="closeWalkinDrawer()">Cancel</button>
     </div>
 </div>
-<!-- No Dental Record Warning Modal (shared with appointments list) -->
+<!-- No Dental Record Warning Modal -->
 <div class="modal fade" id="noRecordModal" tabindex="-1">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
@@ -918,20 +916,16 @@ $show_now=($day_date===$today&&$now_h>=$open_h&&$now_h<$close_h);
             </div>
             <div class="modal-body" style="font-size:0.875rem;color:#374151;">
                 <p style="margin:0 0 10px;">This appointment has <strong>no dental record</strong> attached to it yet.</p>
-                <p style="margin:0;color:#6b7280;font-size:0.8rem;">Would you like to record the treatment first, or mark it as completed anyway?</p>
+                <p style="margin:0;color:#6b7280;font-size:0.8rem;">Record the treatment first, or mark it as completed anyway?</p>
                 <div style="margin-top:12px;padding:10px 12px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;font-size:0.78rem;color:#92400e;">
                     <i class="bi bi-info-circle-fill" style="margin-right:5px;"></i>
-                    Skipping this may leave the patient's clinical history incomplete.
+                    Skipping may leave the patient's clinical history incomplete.
                 </div>
             </div>
-            <div class="modal-footer" style="flex-wrap:wrap;gap:6px;justify-content:stretch;">
-                <button type="button" class="btn btn-sm btn-primary" style="flex:1;min-width:140px;" onclick="goToRecordTreatment()">
-                    <i class="bi bi-clipboard2-pulse"></i> Go to Record Treatment
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" style="flex:1;min-width:120px;" onclick="completeAnyway()">
-                    <i class="bi bi-check2-all"></i> Complete Anyway
-                </button>
-                <button type="button" class="btn btn-sm btn-link text-secondary w-100" style="font-size:0.78rem;" data-bs-dismiss="modal">Cancel</button>
+            <div class="modal-footer" style="flex-wrap:wrap;gap:6px;">
+                <button class="btn btn-sm btn-primary" style="flex:1;" onclick="goToRecordTreatment()"><i class="bi bi-clipboard2-pulse"></i> Record Treatment</button>
+                <button class="btn btn-sm btn-outline-secondary" style="flex:1;" onclick="completeAnyway()"><i class="bi bi-check2-all"></i> Complete Anyway</button>
+                <button class="btn btn-sm btn-link text-secondary w-100" style="font-size:0.78rem;" data-bs-dismiss="modal">Cancel</button>
             </div>
         </div>
     </div>
@@ -955,6 +949,18 @@ var apptModal=new bootstrap.Modal(document.getElementById('apptModal'));
 var _curAppt=null;
 function ucwords(s){return s.toLowerCase().replace(/(^|\s)\S/g,l=>l.toUpperCase());}
 function goToDay(d){ openWalkinDrawer(d); }
+// Central handler: cells with appts open the day summary first,
+// empty cells open the drawer directly. Either way the date is always correct.
+function handleCalCellClick(e, cell){
+    var date = cell.getAttribute('data-cal-date');
+    if(!date) return;
+    // If there are appts on this date, show the day summary modal
+    if(allAppts && allAppts[date] && allAppts[date].length > 0){
+        viewDay(date);
+    } else {
+        openWalkinDrawer(date);
+    }
+}
 var _dayModalDate=_today;
 function viewDay(date){
     _dayModalDate=date;
@@ -963,8 +969,6 @@ function viewDay(date){
     var label=d.toLocaleDateString('en-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
     document.getElementById('dayModalTitle').textContent=label;
     document.getElementById('dayModalSub').textContent=appts.length+' appointment'+(appts.length!==1?'s':'');
-    document.getElementById('dayListLink').href='list.php?date='+date;
-    document.getElementById('dayViewLink').href='calendar.php?view=day&date='+date;
     var body='';
     if(!appts.length){body='<p style="color:var(--gray-400);text-align:center;padding:24px 0;"><i class="bi bi-calendar-x" style="font-size:2rem;display:block;margin-bottom:8px;"></i>No appointments on this day.</p>';}
     else{
@@ -1031,20 +1035,21 @@ function updateApptStatus(id,status){
     .then(r=>r.json()).then(d=>{
         if(d.status==='success'){
             apptModal.hide();location.reload();
-        } else if(d.status==='no_record_warning'){
+        }else if(d.status==='no_record_warning'){
             apptModal.hide();
             _pendingCompleteId=d.appt_id;
             noRecordModal.show();
-        } else {
+        }else{
             alert('Error: '+(d.message||'Update failed'));
         }
     });
 }
-var noRecordModal=new bootstrap.Modal(document.getElementById('noRecordModal'));
+var _noRecordModalEl=document.getElementById('noRecordModal');
+var noRecordModal=_noRecordModalEl?new bootstrap.Modal(_noRecordModalEl):null;
 var _pendingCompleteId=null;
-function goToRecordTreatment(){noRecordModal.hide();window.location.href=_baseUrl+'modules/treatments/add.php?appointment_id='+_pendingCompleteId;}
+function goToRecordTreatment(){if(noRecordModal)noRecordModal.hide();window.location.href=_baseUrl+'modules/treatments/add.php?appointment_id='+_pendingCompleteId;}
 function completeAnyway(){
-    noRecordModal.hide();
+    if(noRecordModal)noRecordModal.hide();
     fetch(_baseUrl+'api/appointments.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'update_status',id:_pendingCompleteId,status:'completed',force:true})})
     .then(r=>r.json()).then(d=>{if(d.status==='success')location.reload();else alert('Error: '+(d.message||'Update failed'));});
 }
