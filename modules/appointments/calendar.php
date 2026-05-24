@@ -484,14 +484,16 @@ $all_docs_dw = $conn->query("SELECT id, full_name, specialization, schedule_days
     <div class="view-toggle" style="margin-left:10px;">
         <a href="calendar.php?view=month&month=<?php echo $month; ?>&year=<?php echo $year; ?>" class="<?php echo $view==='month'?'active':''; ?>"><i class="bi bi-calendar3"></i> Month</a>
         <?php
-            // When already in week/day, keep context so navigation stays in sync.
-            // When coming FROM month view, always jump to today (not May 1st).
-            if ($view === 'week')       $ctx = $week_start;
-            elseif ($view === 'day')    $ctx = $day_date;
-            else                        $ctx = $today;  // ← was $month_start (always sent to May 1)
+            // Week link: stay in current week if already in week view, otherwise jump to today's week
+            if ($view === 'week')       $ctx_week = $week_start;
+            elseif ($view === 'day')    $ctx_week = $day_date;
+            else                        $ctx_week = $today;
+
+            // Day link: always jump to TODAY — never the week start
+            $ctx_day = ($view === 'day') ? $day_date : $today;
         ?>
-        <a href="calendar.php?view=week&date=<?php echo $ctx; ?>" class="<?php echo $view==='week'?'active':''; ?>"><i class="bi bi-calendar-week"></i> Week</a>
-        <a href="calendar.php?view=day&date=<?php echo $ctx; ?>" class="<?php echo $view==='day'?'active':''; ?>"><i class="bi bi-calendar-day"></i> Day</a>
+        <a href="calendar.php?view=week&date=<?php echo $ctx_week; ?>" class="<?php echo $view==='week'?'active':''; ?>"><i class="bi bi-calendar-week"></i> Week</a>
+        <a href="calendar.php?view=day&date=<?php echo $ctx_day; ?>" class="<?php echo $view==='day'?'active':''; ?>"><i class="bi bi-calendar-day"></i> Day</a>
     </div>
     <div class="cal-header-actions" style="margin-left:auto;display:flex;gap:8px;align-items:center;">
         <button onclick="openWalkinDrawer()" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:10px;background:linear-gradient(135deg,#16a34a,#22c55e);color:var(--white);border:none;font-size:0.82rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(22,163,74,0.3);transition:all 0.15s;" onmouseover="this.style.boxShadow='0 4px 14px rgba(22,163,74,0.45)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(22,163,74,0.3)'">
@@ -509,7 +511,6 @@ $all_docs_dw = $conn->query("SELECT id, full_name, specialization, schedule_days
     <a href="calendar.php?view=month&month=<?php echo $prev_month; ?>&year=<?php echo $prev_year; ?>" class="cal-nav-btn"><i class="bi bi-chevron-left"></i></a>
     <span class="cal-nav-label"><?php echo $month_label; ?></span>
     <a href="calendar.php?view=month&month=<?php echo $next_month; ?>&year=<?php echo $next_year; ?>" class="cal-nav-btn"><i class="bi bi-chevron-right"></i></a>
-    <a href="calendar.php?view=day&date=<?php echo $today;?>" class="cal-today-btn" style="white-space:nowrap;">📅 Today</a>
     <span style="margin-left:auto;font-size:0.78rem;color:var(--gray-400);font-weight:600;">
         <?php $total_this_month = array_sum(array_map('count', $appts_by_date)); ?>
         <?php echo $total_this_month; ?> appointment<?php echo $total_this_month !== 1 ? 's' : ''; ?> this month
