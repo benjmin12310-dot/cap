@@ -68,9 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $success = "Doctor updated successfully.";
                 } else {
                    // Insert new
-                    $branch_id = $_SESSION['branch_id'] ?? 1; 
-                    $stmt = $conn->prepare("INSERT INTO doctors (branch_id, full_name, license_number, specialization, bio, photo_url, schedule_days, start_time, end_time, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    $stmt->bind_param('issssssssi', $branch_id, $full_name, $license_number, $specialization, $bio, $photo_url, $schedule_days, $start_time, $end_time, $is_active);
+                    $stmt = $conn->prepare("INSERT INTO doctors (full_name, license_number, specialization, bio, photo_url, schedule_days, start_time, end_time, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->bind_param('ssssssssi', $full_name, $license_number, $specialization, $bio, $photo_url, $schedule_days, $start_time, $end_time, $is_active);
                     $stmt->execute();
                     $new_id = $conn->insert_id;
                     $stmt->close();
@@ -148,9 +147,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Load doctors for THIS BRANCH ONLY
-$branch_id = $_SESSION['branch_id'] ?? 1; 
-$doctors = $conn->query("SELECT * FROM doctors WHERE branch_id = $branch_id ORDER BY is_active DESC, full_name ASC")->fetch_all(MYSQLI_ASSOC);
+// Load all doctors
+$doctors = $conn->query("SELECT * FROM doctors ORDER BY is_active DESC, full_name ASC")->fetch_all(MYSQLI_ASSOC);
 
 // Performance stats per doctor — this month
 $month_start = date('Y-m-01');
