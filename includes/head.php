@@ -21,7 +21,7 @@ $_bootstrap_icons_local = file_exists($_app_root . '/assets/css/bootstrap-icons.
 <link rel="icon"             type="image/svg+xml"     href="<?php echo BASE_URL; ?>assets/images/favicon.svg">
 <link rel="icon"             type="image/png" sizes="32x32" href="<?php echo BASE_URL; ?>assets/images/favicon-32.png">
 <link rel="icon"             type="image/png" sizes="16x16" href="<?php echo BASE_URL; ?>assets/images/favicon-16.png">
-<link rel="apple-touch-icon" sizes="180x180"         href="<?php echo BASE_URL; ?>assets/images/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180"         href="<?php echo BASE_URL; ?>assets/images/favicon.svg">
 <meta name="theme-color" content="#2563eb">
 
 <!-- PWA manifest -->
