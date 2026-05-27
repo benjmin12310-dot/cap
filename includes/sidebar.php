@@ -1,4 +1,4 @@
-]<?php
+<?php
 // sidebar.php — Left navigation sidebar shown on every admin page.
 // NOTE: Requires auth.php to be included first for $current_user_* variables
 
@@ -177,8 +177,8 @@ function nav_active($path) {
         <?php if (is_admin()): ?>
         <li role="presentation"><span class="nav-section-label" aria-hidden="true">Admin</span></li>
         <li role="presentation">
-            <a href="<?php echo BASE_URL; ?>modules/analytics/dashboard.php" class="<?php echo nav_active('/analytics/'); ?>"
-               <?php echo nav_active('/analytics/') ? 'aria-current="page"' : ''; ?>>
+            <a href="<?php echo BASE_URL; ?>modules/analytics/dashboard.php" class="<?php echo nav_active('/analytics/dashboard'); ?>"
+               <?php echo nav_active('/analytics/dashboard') ? 'aria-current="page"' : ''; ?>>
                 <i class="bi bi-bar-chart-fill" aria-hidden="true"></i><span class="nav-label">Analytics</span>
             </a>
         </li>
