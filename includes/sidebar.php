@@ -183,6 +183,12 @@ function nav_active($path) {
             </a>
         </li>
         <li role="presentation">
+            <a href="<?php echo BASE_URL; ?>modules/analytics/demographics.php" class="<?php echo nav_active('/analytics/demographics'); ?>"
+               <?php echo nav_active('/analytics/demographics') ? 'aria-current="page"' : ''; ?>>
+                <i class="bi bi-people-fill" aria-hidden="true"></i><span class="nav-label">Demographics</span>
+            </a>
+        </li>
+        <li role="presentation">
             <a href="<?php echo BASE_URL; ?>modules/reports/index.php" class="<?php echo nav_active('/reports/'); ?>"
                <?php echo nav_active('/reports/') ? 'aria-current="page"' : ''; ?>>
                 <i class="bi bi-file-earmark-bar-graph-fill" aria-hidden="true"></i><span class="nav-label">Reports</span>
