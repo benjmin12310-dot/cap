@@ -1,0 +1,52 @@
+{
+  "name": "Dental Clinic Management",
+  "short_name": "DentalCare",
+  "description": "Manage patients, appointments, and billing for your dental clinic.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#03112b",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "assets/images/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/images/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today's Appointments",
+      "short_name": "Appointments",
+      "url": "./modules/appointments/list.php",
+      "icons": [{ "src": "assets/images/favicon-32.png", "sizes": "32x32" }]
+    },
+    {
+      "name": "Add Patient",
+      "short_name": "New Patient",
+      "url": "./modules/patients/add.php",
+      "icons": [{ "src": "assets/images/favicon-32.png", "sizes": "32x32" }]
+    },
+    {
+      "name": "Billing",
+      "short_name": "Billing",
+      "url": "./modules/billing/list.php",
+      "icons": [{ "src": "assets/images/favicon-32.png", "sizes": "32x32" }]
+    }
+  ],
+  "categories": ["medical", "productivity"],
+  "lang": "en"
+}
