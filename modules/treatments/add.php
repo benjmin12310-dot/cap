@@ -5,7 +5,6 @@ require_once '../../includes/config.php';
 require_once '../../includes/db.php';
 require_once '../../includes/auth.php';
 
-// Variables from auth.php for static analysis
 /** @var int $current_user_id */
 /** @var string $current_user_name */
 /** @var string $current_user_role */
@@ -20,16 +19,10 @@ $pre_appointment_id = intval($_GET['appointment_id'] ?? 0);
 $patients = $conn->query("SELECT id, patient_code, first_name, last_name FROM patients WHERE is_active = 1 ORDER BY last_name ASC")->fetch_all(MYSQLI_ASSOC);
 $services = $conn->query("SELECT id, service_name FROM services WHERE is_active = 1 ORDER BY service_name ASC")->fetch_all(MYSQLI_ASSOC);
 
-// Pre-load appointment details when coming from Check-in
 $pre_appointment = null;
 $pre_service_id  = 0;
 if ($pre_appointment_id) {
-    $pa_stmt = $conn->prepare("
-        SELECT a.*, s.id as service_id, s.service_name
-        FROM appointments a
-        LEFT JOIN services s ON a.service_id = s.id
-        WHERE a.id = ? LIMIT 1
-    ");
+    $pa_stmt = $conn->prepare("SELECT a.*, s.id as service_id, s.service_name FROM appointments a LEFT JOIN services s ON a.service_id = s.id WHERE a.id = ? LIMIT 1");
     $pa_stmt->bind_param('i', $pre_appointment_id);
     $pa_stmt->execute();
     $pre_appointment = $pa_stmt->get_result()->fetch_assoc();
@@ -46,26 +39,15 @@ if ($pre_patient_id) {
     $pp_stmt->close();
 }
 
-// Patient history: last 5 treatments
 $past_treatments = [];
 if ($pre_patient_id) {
-    $pt_stmt = $conn->prepare("
-        SELECT dr.visit_date, dr.treatment_done, dr.diagnosis, dr.tooth_number,
-               dr.tooth_status, dr.medications_prescribed, dr.next_visit_notes,
-               s.service_name
-        FROM dental_records dr
-        LEFT JOIN services s ON dr.service_id = s.id
-        WHERE dr.patient_id = ?
-        ORDER BY dr.visit_date DESC, dr.id DESC
-        LIMIT 5
-    ");
+    $pt_stmt = $conn->prepare("SELECT dr.visit_date, dr.treatment_done, dr.diagnosis, dr.tooth_number, dr.tooth_status, dr.medications_prescribed, dr.next_visit_notes, s.service_name FROM dental_records dr LEFT JOIN services s ON dr.service_id = s.id WHERE dr.patient_id = ? ORDER BY dr.visit_date DESC, dr.id DESC LIMIT 5");
     $pt_stmt->bind_param('i', $pre_patient_id);
     $pt_stmt->execute();
     $past_treatments = $pt_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $pt_stmt->close();
 }
 
-// Outstanding balance
 $outstanding = 0;
 if ($pre_patient_id) {
     $bal_stmt = $conn->prepare("SELECT COALESCE(SUM(amount_due - amount_paid),0) as bal FROM bills WHERE patient_id = ? AND status != 'paid'");
@@ -77,29 +59,19 @@ if ($pre_patient_id) {
 
 $patient_appointments = [];
 if ($pre_patient_id) {
-    $patient_appointments = $conn->query("
-        SELECT id, appointment_code, appointment_date FROM appointments
-        WHERE patient_id = $pre_patient_id AND status IN ('pending','confirmed','completed')
-        ORDER BY appointment_date DESC
-    ")->fetch_all(MYSQLI_ASSOC);
+    $patient_appointments = $conn->query("SELECT id, appointment_code, appointment_date FROM appointments WHERE patient_id = $pre_patient_id AND status IN ('pending','confirmed','completed') ORDER BY appointment_date DESC")->fetch_all(MYSQLI_ASSOC);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        validate_csrf();
+    validate_csrf();
     $patient_id     = intval($_POST['patient_id'] ?? 0);
     $appointment_id = intval($_POST['appointment_id'] ?? 0) ?: null;
     $service_id     = intval($_POST['service_id'] ?? 0) ?: null;
     $tooth_number   = trim($_POST['tooth_number'] ?? '');
-    // Safety: DB column is VARCHAR(255) after fix — trim to 255 chars just in case
-    if (strlen($tooth_number) > 255) {
-        $tooth_number = substr($tooth_number, 0, 255);
-    }
-    // BUG FIX #1: Capture tooth_status from the new form field
+    if (strlen($tooth_number) > 255) $tooth_number = substr($tooth_number, 0, 255);
     $tooth_status   = trim($_POST['tooth_status'] ?? 'normal');
-    // Validate tooth_status is a valid ENUM value
     $valid_statuses = ['normal','caries','filling','extraction','missing','crown','rootcanal','bridge','implant','denture'];
     if (!in_array($tooth_status, $valid_statuses)) $tooth_status = 'normal';
-
     $chief_complaint = trim($_POST['chief_complaint'] ?? '');
     $diagnosis       = trim($_POST['diagnosis'] ?? '');
     $treatment_done  = trim($_POST['treatment_done'] ?? '');
@@ -110,43 +82,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$patient_id || empty($treatment_done)) {
         $error = 'Patient and treatment done are required.';
     } else {
-        // BUG FIX #1 + #5: tooth_status added to INSERT, bind_param types corrected
-        // BUG FIX #5: appointment_id and service_id are nullable ints — 'i' type handles
-        //             PHP null correctly in MySQLi when value is explicitly null (not 0)
-        $stmt = $conn->prepare("
-            INSERT INTO dental_records
-            (patient_id, appointment_id, service_id, tooth_number, tooth_status,
-             chief_complaint, diagnosis, treatment_done, medications_prescribed,
-             next_visit_notes, recorded_by, visit_date)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-        ");
+        $stmt = $conn->prepare("INSERT INTO dental_records (patient_id, appointment_id, service_id, tooth_number, tooth_status, chief_complaint, diagnosis, treatment_done, medications_prescribed, next_visit_notes, recorded_by, visit_date) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
         if (!$stmt) {
             $error = 'Database error: ' . $conn->error;
         } else {
-            // 'i' × 3, 's' × 8, 'i' × 1, 's' × 1 = 12 params
-            $stmt->bind_param(
-                'iiisssssssis',
-                $patient_id, $appointment_id, $service_id,
-                $tooth_number, $tooth_status,
-                $chief_complaint, $diagnosis, $treatment_done,
-                $medications, $next_visit,
-                $current_user_id, $visit_date
-            );
-
+            $stmt->bind_param('iiisssssssis', $patient_id, $appointment_id, $service_id, $tooth_number, $tooth_status, $chief_complaint, $diagnosis, $treatment_done, $medications, $next_visit, $current_user_id, $visit_date);
             if ($stmt->execute()) {
                 $new_id = $conn->insert_id;
                 $stmt->close();
-
                 if ($appointment_id) {
                     $upd = $conn->prepare("UPDATE appointments SET status = 'completed' WHERE id = ?");
                     $upd->bind_param('i', $appointment_id);
                     $upd->execute();
                     $upd->close();
                 }
-
                 log_action($conn, $current_user_id, $current_user_name, 'Added Dental Record', 'treatments', $new_id, "Patient ID: $patient_id | Visit: $visit_date | Status: $tooth_status");
-
-                // Chain: after saving dental record → go to billing
                 if ($patient_id) {
                     $billing_url = BASE_URL . "modules/billing/create.php?patient_id=$patient_id";
                     if ($appointment_id) $billing_url .= "&appointment_id=$appointment_id";
@@ -162,60 +112,133 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// ── Tooth type helper ──────────────────────────────────────────────────────
+function toothType(int $n): string {
+    if (in_array($n, [18,17,16,28,27,26,38,37,36,48,47,46])) return 'molar';
+    if (in_array($n, [15,14,25,24,35,34,45,44]))              return 'premolar';
+    if (in_array($n, [13,23,33,43]))                          return 'canine';
+    return 'incisor';
+}
+
+// ── SVG tooth shapes ───────────────────────────────────────────────────────
+// Coordinates are relative to tooth center (x=0).
+// Upper jaw:  roots y=14–40, crown y=38–62
+// Lower jaw:  crown y=78–102, roots y=100–126
+function toothSVG(string $type, string $jaw): string {
+    if ($jaw === 'upper') {
+        return match($type) {
+            'molar'    => '
+                <rect x="-10" y="14" width="9"  height="26" rx="2.5" class="tooth-root"/>
+                <rect x="1"   y="14" width="9"  height="26" rx="2.5" class="tooth-root"/>
+                <rect x="-13" y="36" width="26" height="26" rx="4"   class="tooth-crown"/>',
+            'premolar' => '
+                <rect x="-6.5" y="14" width="7" height="26" rx="2.5" class="tooth-root"/>
+                <rect x="1"    y="14" width="7" height="26" rx="2.5" class="tooth-root"/>
+                <rect x="-11"  y="36" width="22" height="26" rx="4"  class="tooth-crown"/>',
+            'canine'   => '
+                <rect x="-3.5" y="12" width="7" height="28" rx="2.5" class="tooth-root"/>
+                <path d="M-8,38 L8,38 L6.5,54 Q0,64 -6.5,54 Z"      class="tooth-crown"/>',
+            default    => '
+                <rect x="-3.5" y="14" width="7"  height="26" rx="2.5" class="tooth-root"/>
+                <rect x="-9"   y="38" width="18" height="24" rx="4"   class="tooth-crown"/>',
+        };
+    } else {
+        return match($type) {
+            'molar'    => '
+                <rect x="-13" y="78"  width="26" height="26" rx="4"   class="tooth-crown"/>
+                <rect x="-10" y="102" width="9"  height="26" rx="2.5" class="tooth-root"/>
+                <rect x="1"   y="102" width="9"  height="26" rx="2.5" class="tooth-root"/>',
+            'premolar' => '
+                <rect x="-11" y="78"  width="22" height="26" rx="4"   class="tooth-crown"/>
+                <rect x="-6.5" y="102" width="7" height="26" rx="2.5" class="tooth-root"/>
+                <rect x="1"    y="102" width="7" height="26" rx="2.5" class="tooth-root"/>',
+            'canine'   => '
+                <path d="M-8,100 L8,100 L6.5,84 Q0,76 -6.5,84 Z"    class="tooth-crown"/>
+                <rect x="-3.5" y="100" width="7" height="28" rx="2.5" class="tooth-root"/>',
+            default    => '
+                <rect x="-9"   y="78"  width="18" height="24" rx="4"   class="tooth-crown"/>
+                <rect x="-3.5" y="100" width="7"  height="26" rx="2.5" class="tooth-root"/>',
+        };
+    }
+}
+
+// Tooth slot center x positions (viewBox width = 640, 38px slots, 10px midline gap)
+function toothCX(int $i): int {
+    if ($i < 8) return 30 + $i * 38;          // i=0→30 … i=7→296
+    return 344 + ($i - 8) * 38;               // i=8→344 … i=15→610
+}
+
+$upperTeeth = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+$lowerTeeth = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+$primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83','82','81','71','72','73','74','75'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head><?php include '../../includes/head.php'; ?>
 <style>
-/* ── Add Dental Record — mobile ── */
+/* ── Tooth SVG Chart ─────────────────────────────── */
+.tooth-btn { cursor: pointer; }
+.tooth-btn .tooth-crown {
+    fill: #E2E8F0; stroke: #CBD5E1; stroke-width: 0.8;
+    transition: fill 0.12s, stroke 0.12s;
+}
+.tooth-btn .tooth-root {
+    fill: #EDF2F7; stroke: #CBD5E1; stroke-width: 0.8;
+    transition: fill 0.12s, stroke 0.12s;
+}
+.tooth-btn .tooth-num {
+    fill: #94A3B8; font-size: 8px; font-family: 'Outfit', sans-serif;
+    font-weight: 600; pointer-events: none;
+    transition: fill 0.12s;
+}
+.tooth-btn:hover .tooth-crown,
+.tooth-btn:hover .tooth-root  { fill: #DBEAFE; stroke: #93C5FD; }
+
+/* Selected states */
+.tooth-btn.s-selected .tooth-crown,
+.tooth-btn.s-selected .tooth-root  { fill: #2563EB; stroke: #1D4ED8; }
+.tooth-btn.s-selected .tooth-num   { fill: #fff; }
+/* Per-condition */
+.tooth-btn.s-normal    .tooth-crown { fill: #BBF7D0; stroke: #22C55E; }
+.tooth-btn.s-normal    .tooth-root  { fill: #DCFCE7; stroke: #22C55E; }
+.tooth-btn.s-caries    .tooth-crown { fill: #FDE68A; stroke: #F59E0B; }
+.tooth-btn.s-caries    .tooth-root  { fill: #FEF3C7; stroke: #F59E0B; }
+.tooth-btn.s-filling   .tooth-crown { fill: #BFDBFE; stroke: #3B82F6; }
+.tooth-btn.s-filling   .tooth-root  { fill: #DBEAFE; stroke: #3B82F6; }
+.tooth-btn.s-extraction .tooth-crown { fill: #FECACA; stroke: #EF4444; opacity:.85; }
+.tooth-btn.s-extraction .tooth-root  { fill: #FEE2E2; stroke: #EF4444; opacity:.6; }
+.tooth-btn.s-missing   .tooth-crown { fill: #F1F5F9; stroke: #94A3B8; opacity:.45; }
+.tooth-btn.s-missing   .tooth-root  { fill: #F8FAFC; stroke: #94A3B8; opacity:.45; }
+.tooth-btn.s-crown     .tooth-crown { fill: #E9D5FF; stroke: #A855F7; }
+.tooth-btn.s-crown     .tooth-root  { fill: #F3E8FF; stroke: #C084FC; }
+.tooth-btn.s-rootcanal .tooth-crown { fill: #FECDD3; stroke: #F43F5E; }
+.tooth-btn.s-rootcanal .tooth-root  { fill: #FFE4E6; stroke: #FDA4AF; }
+.tooth-btn.s-bridge    .tooth-crown { fill: #A7F3D0; stroke: #10B981; }
+.tooth-btn.s-bridge    .tooth-root  { fill: #D1FAE5; stroke: #10B981; }
+.tooth-btn.s-implant   .tooth-crown { fill: #BAE6FD; stroke: #0EA5E9; }
+.tooth-btn.s-implant   .tooth-root  { fill: #E0F2FE; stroke: #0EA5E9; }
+.tooth-btn.s-denture   .tooth-crown { fill: #D6D3D1; stroke: #78716C; }
+.tooth-btn.s-denture   .tooth-root  { fill: #E7E5E4; stroke: #A8A29E; }
+
+/* Dark mode */
+[data-theme="dark"] .tooth-btn .tooth-crown { fill: #334155; stroke: #475569; }
+[data-theme="dark"] .tooth-btn .tooth-root  { fill: #1E293B; stroke: #475569; }
+[data-theme="dark"] .tooth-btn .tooth-num   { fill: #64748B; }
+[data-theme="dark"] .tooth-btn:hover .tooth-crown,
+[data-theme="dark"] .tooth-btn:hover .tooth-root { fill: #1E3A8A; stroke: #3B82F6; }
+
+/* Mobile */
 @media (max-width: 640px) {
-    /* Workflow breadcrumb: scrollable on small phones */
-    .workflow-breadcrumb {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        white-space: nowrap !important;
-        padding-bottom: 4px !important;
-    }
-    /* Tooth chart: scrollable, teeth slightly smaller */
-    #toothChartWrap {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        padding: 12px 8px !important;
-    }
-    .tooth-btn {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 0.58rem !important;
-    }
-    /* Tooth root indicators shrink too */
-    #toothChartWrap [style*="height:6px"] {
-        width: 28px !important;
-    }
-    /* Primary teeth circle buttons */
-    #toothChartWrap [style*="border-radius:50%"].tooth-btn {
-        width: 26px !important;
-        height: 26px !important;
-    }
-    /* Condition preview: full width */
-    #conditionPreview {
-        width: 100% !important;
-        justify-content: center !important;
-    }
-    /* Save + Cancel buttons: stack */
-    .dental-form-actions {
-        flex-direction: column !important;
-    }
-    .dental-form-actions > * {
-        width: 100% !important;
-        text-align: center !important;
-        justify-content: center !important;
-    }
-    /* Medical alert grid: single column */
-    .medical-alert-grid {
-        grid-template-columns: 1fr !important;
-    }
+    .workflow-breadcrumb { overflow-x:auto!important; -webkit-overflow-scrolling:touch!important; white-space:nowrap!important; }
+    #toothChartWrap { overflow-x:auto!important; -webkit-overflow-scrolling:touch!important; padding:12px 8px!important; }
+    #conditionPreview { width:100%!important; justify-content:center!important; }
+    .dental-form-actions { flex-direction:column!important; }
+    .dental-form-actions > * { width:100%!important; text-align:center!important; justify-content:center!important; }
+    .medical-alert-grid { grid-template-columns:1fr!important; }
 }
 </style>
+</head>
 <body>
 <?php include '../../includes/sidebar.php'; ?>
 <div class="main-content">
@@ -238,46 +261,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <?php endif; ?>
 
-        <!-- =====================================================================
-             BUG FIX #3 — Patient Medical Context Panel
-             Shows allergies, medical notes, illness history as a warning banner.
-             Only renders if patient is pre-selected AND has relevant data.
-        ===================================================================== -->
+        <!-- Medical alert -->
         <?php if ($pre_patient && ($pre_patient['allergies'] || $pre_patient['medical_notes'] || $pre_patient['illness_history'] || $pre_patient['blood_type'])): ?>
         <div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;padding:14px 18px;margin-bottom:20px;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
                 <i class="bi bi-shield-exclamation" style="font-size:1.1rem;color:#d97706;"></i>
-                <strong style="font-size:0.85rem;color:#92400e;">
-                    Medical Alert — <?php echo e($pre_patient['last_name'].', '.$pre_patient['first_name']); ?>
-                </strong>
+                <strong style="font-size:0.85rem;color:#92400e;">Medical Alert — <?php echo e($pre_patient['last_name'].', '.$pre_patient['first_name']); ?></strong>
                 <?php if ($pre_patient['blood_type']): ?>
-                <span style="margin-left:auto;background:#dc2626;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:20px;">
-                    <?php echo e($pre_patient['blood_type']); ?>
-                </span>
+                <span style="margin-left:auto;background:#dc2626;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:20px;"><?php echo e($pre_patient['blood_type']); ?></span>
                 <?php endif; ?>
             </div>
             <div class="medical-alert-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
                 <?php if ($pre_patient['allergies']): ?>
                 <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:8px 12px;">
-                    <div style="font-size:0.7rem;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">
-                        <i class="bi bi-exclamation-triangle-fill"></i> Allergies
-                    </div>
+                    <div style="font-size:0.7rem;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;"><i class="bi bi-exclamation-triangle-fill"></i> Allergies</div>
                     <div style="font-size:0.8rem;color:#7f1d1d;"><?php echo e($pre_patient['allergies']); ?></div>
                 </div>
                 <?php endif; ?>
                 <?php if ($pre_patient['medical_notes']): ?>
                 <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:8px 12px;">
-                    <div style="font-size:0.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">
-                        <i class="bi bi-heart-pulse-fill"></i> Medical Notes
-                    </div>
+                    <div style="font-size:0.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;"><i class="bi bi-heart-pulse-fill"></i> Medical Notes</div>
                     <div style="font-size:0.8rem;color:#1e3a8a;"><?php echo e($pre_patient['medical_notes']); ?></div>
                 </div>
                 <?php endif; ?>
                 <?php if ($pre_patient['illness_history']): ?>
                 <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:8px 12px;">
-                    <div style="font-size:0.7rem;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">
-                        <i class="bi bi-clock-history"></i> Illness History
-                    </div>
+                    <div style="font-size:0.7rem;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;"><i class="bi bi-clock-history"></i> Illness History</div>
                     <div style="font-size:0.8rem;color:#14532d;"><?php echo e($pre_patient['illness_history']); ?></div>
                 </div>
                 <?php endif; ?>
@@ -288,9 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="page-header">
             <div>
                 <h5>Record Treatment</h5>
-                <p style="font-size:0.82rem;color:var(--gray-500);">
-                    Fill in what was done for the patient. After saving, you will be taken to billing.
-                </p>
+                <p style="font-size:0.82rem;color:var(--gray-500);">Fill in what was done for the patient. After saving, you will be taken to billing.</p>
             </div>
             <a href="<?php echo $pre_appointment_id ? BASE_URL.'modules/appointments/list.php' : 'list.php'; ?>" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to Appointments
@@ -332,110 +339,123 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <?php endforeach; ?>
                             </select>
                         </div>
-
-                        <!-- =====================================================================
-                             BUG FIX #2 — Service is no longer locked.
-                             Pre-selects the appointment service but allows the dentist to change
-                             it if the actual treatment differed from what was booked.
-                        ===================================================================== -->
                         <div class="col-md-4">
                             <label class="form-label">Service
                                 <?php if ($pre_appointment_id && $pre_service_id): ?>
-                                <span style="font-size:0.72rem;color:var(--blue-500);font-weight:600;">
-                                    <i class="bi bi-link-45deg"></i> Pre-filled from appointment — change if needed
-                                </span>
+                                <span style="font-size:0.72rem;color:var(--blue-500);font-weight:600;"><i class="bi bi-link-45deg"></i> Pre-filled — change if needed</span>
                                 <?php endif; ?>
                             </label>
                             <select name="service_id" class="form-select">
                                 <option value="">Select Service</option>
                                 <?php foreach ($services as $s): ?>
-                                    <option value="<?php echo $s['id']; ?>"
-                                        <?php echo $pre_service_id == $s['id'] ? 'selected' : ''; ?>>
+                                    <option value="<?php echo $s['id']; ?>" <?php echo $pre_service_id == $s['id'] ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($s['service_name']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-
                         <div class="col-md-3">
                             <label class="form-label">Visit Date</label>
                             <input type="date" name="visit_date" class="form-control" value="<?php echo date('Y-m-d'); ?>">
                         </div>
                         <div class="col-md-12">
                             <label class="form-label">Chief Complaint <span style="color:var(--gray-400);font-size:0.8rem;">(patient's own words)</span></label>
-                            <input type="text" name="chief_complaint" class="form-control" placeholder="e.g. Masakit ang ngipin ko sa kanan, may butas — what the patient says when they walk in">
+                            <input type="text" name="chief_complaint" class="form-control" placeholder="e.g. Masakit ang ngipin ko sa kanan — what the patient says when they walk in">
                         </div>
 
-                        <!-- ===== INTERACTIVE TOOTH CHART ===== -->
+                        <!-- ═══════════════════════════════════════════════════════
+                             INTERACTIVE SVG TOOTH CHART (FDI ODONTOGRAM)
+                        ═══════════════════════════════════════════════════════ -->
                         <div class="col-md-12">
-                            <label class="form-label">Tooth Chart <span style="color:var(--gray-400);font-size:0.8rem;">(click teeth to select — selected teeth appear in the field below)</span></label>
-                            <div id="toothChartWrap" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:18px 12px;user-select:none;">
+                            <label class="form-label">
+                                Tooth Chart
+                                <span style="color:var(--gray-400);font-size:0.78rem;">— click a tooth, then pick its condition below</span>
+                            </label>
 
-                                <!-- Legend -->
-                                <div style="text-align:center;font-size:0.72rem;color:var(--gray-500);margin-bottom:10px;font-family:'Outfit',sans-serif;">
-                                    <span style="display:inline-block;width:18px;height:18px;background:var(--blue-500);border-radius:50%;margin-right:4px;vertical-align:middle;"></span> Selected &nbsp;
-                                    <span style="display:inline-block;width:18px;height:18px;background:var(--gray-200);border-radius:50%;margin-right:4px;vertical-align:middle;border:1px solid var(--gray-300);"></span> Healthy
-                                </div>
+                            <div id="toothChartWrap" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:16px 10px 12px;user-select:none;">
 
-                                <!-- UPPER JAW -->
-                                <div style="text-align:center;font-size:0.7rem;color:var(--gray-400);margin-bottom:3px;">UPPER JAW</div>
-                                <div style="display:flex;justify-content:center;gap:4px;margin-bottom:2px;">
-                                    <?php foreach ([18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28] as $tn): ?>
-                                    <div class="tooth-btn" data-tooth="<?php echo $tn; ?>" title="Tooth <?php echo $tn; ?>" style="width:34px;height:34px;border-radius:6px 6px 14px 14px;background:var(--gray-200);border:1px solid var(--gray-300);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:var(--gray-600);font-weight:600;transition:all 0.15s;flex-shrink:0;"><?php echo $tn; ?></div>
+                                <!-- Condition legend (generated by JS) -->
+                                <div id="chartLegend" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:12px;font-size:0.7rem;"></div>
+
+                                <!-- Main SVG odontogram -->
+                                <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                                <svg id="toothSVG" viewBox="0 0 640 148" width="640" height="148"
+                                     style="display:block;margin:0 auto;max-width:100%;min-width:520px;">
+
+                                    <!-- UPPER JAW label -->
+                                    <text x="320" y="10" text-anchor="middle" font-size="8" fill="#94A3B8"
+                                          font-family="'Outfit',sans-serif" font-weight="700" letter-spacing="1.5">UPPER JAW</text>
+
+                                    <!-- UPPER TEETH -->
+                                    <?php foreach ($upperTeeth as $i => $tn): ?>
+                                    <g class="tooth-btn" data-tooth="<?= $tn ?>" transform="translate(<?= toothCX($i) ?>,0)">
+                                        <?= toothSVG(toothType($tn), 'upper') ?>
+                                        <text class="tooth-num" x="0" y="10" text-anchor="middle"><?= $tn ?></text>
+                                    </g>
                                     <?php endforeach; ?>
-                                </div>
-                                <!-- upper root indicators -->
-                                <div style="display:flex;justify-content:center;gap:4px;margin-bottom:8px;">
-                                    <?php foreach ([18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28] as $tn): ?>
-                                    <div style="width:34px;height:6px;background:linear-gradient(to bottom,var(--gray-300),transparent);border-radius:0 0 4px 4px;flex-shrink:0;"></div>
+
+                                    <!-- MIDLINE indicator -->
+                                    <line x1="320" y1="24" x2="320" y2="126" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="2 3" opacity="0.7"/>
+
+                                    <!-- GUMLINE band -->
+                                    <rect x="0" y="66" width="640" height="16" fill="#F8FAFC" opacity="0.85"/>
+                                    <line x1="8"  y1="68" x2="632" y2="68" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="5 4"/>
+                                    <line x1="8"  y1="78" x2="632" y2="78" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="5 4"/>
+                                    <text x="320" y="76" text-anchor="middle" font-size="7.5" fill="#CBD5E1"
+                                          font-family="'Outfit',sans-serif" font-weight="600" letter-spacing="2">GUM LINE</text>
+
+                                    <!-- LOWER TEETH -->
+                                    <?php foreach ($lowerTeeth as $i => $tn): ?>
+                                    <g class="tooth-btn" data-tooth="<?= $tn ?>" transform="translate(<?= toothCX($i) ?>,0)">
+                                        <?= toothSVG(toothType($tn), 'lower') ?>
+                                        <text class="tooth-num" x="0" y="138" text-anchor="middle"><?= $tn ?></text>
+                                    </g>
                                     <?php endforeach; ?>
+
+                                    <!-- LOWER JAW label -->
+                                    <text x="320" y="148" text-anchor="middle" font-size="8" fill="#94A3B8"
+                                          font-family="'Outfit',sans-serif" font-weight="700" letter-spacing="1.5">LOWER JAW</text>
+
+                                    <!-- Quadrant labels -->
+                                    <text x="155" y="10" text-anchor="middle" font-size="7" fill="#CBD5E1" font-family="'Outfit',sans-serif">← Patient Right</text>
+                                    <text x="485" y="10" text-anchor="middle" font-size="7" fill="#CBD5E1" font-family="'Outfit',sans-serif">Patient Left →</text>
+
+                                </svg>
                                 </div>
 
-                                <!-- Gum line -->
-                                <div style="border-top:2px dashed var(--gray-300);margin:0 auto 8px;width:90%;position:relative;">
-                                    <span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--gray-50);padding:0 8px;font-size:0.65rem;color:var(--gray-400);">GUM LINE</span>
-                                </div>
-
-                                <!-- lower root indicators -->
-                                <div style="display:flex;justify-content:center;gap:4px;margin-bottom:2px;">
-                                    <?php foreach ([48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38] as $tn): ?>
-                                    <div style="width:34px;height:6px;background:linear-gradient(to top,var(--gray-300),transparent);border-radius:4px 4px 0 0;flex-shrink:0;"></div>
-                                    <?php endforeach; ?>
-                                </div>
-                                <!-- LOWER JAW -->
-                                <div style="display:flex;justify-content:center;gap:4px;margin-bottom:4px;">
-                                    <?php foreach ([48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38] as $tn): ?>
-                                    <div class="tooth-btn" data-tooth="<?php echo $tn; ?>" title="Tooth <?php echo $tn; ?>" style="width:34px;height:34px;border-radius:14px 14px 6px 6px;background:var(--gray-200);border:1px solid var(--gray-300);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:var(--gray-600);font-weight:600;transition:all 0.15s;flex-shrink:0;"><?php echo $tn; ?></div>
-                                    <?php endforeach; ?>
-                                </div>
-                                <div style="text-align:center;font-size:0.7rem;color:var(--gray-400);margin-top:3px;">LOWER JAW</div>
-
-                                <!-- Primary teeth -->
-                                <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--gray-200);">
-                                    <div style="text-align:center;font-size:0.7rem;color:var(--gray-400);margin-bottom:6px;">PRIMARY TEETH (DECIDUOUS)</div>
+                                <!-- Primary / deciduous teeth -->
+                                <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-200);">
+                                    <div style="text-align:center;font-size:0.7rem;color:var(--gray-400);margin-bottom:7px;font-weight:600;letter-spacing:0.05em;">PRIMARY / DECIDUOUS TEETH</div>
                                     <div style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap;">
-                                        <?php foreach (['55','54','53','52','51','61','62','63','64','65','85','84','83','82','81','71','72','73','74','75'] as $pt): ?>
-                                        <div class="tooth-btn" data-tooth="<?php echo $pt; ?>" title="Primary tooth <?php echo $pt; ?>" style="width:30px;height:30px;border-radius:50%;background:var(--gray-200);border:1px solid var(--gray-300);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--gray-600);font-weight:600;transition:all 0.15s;flex-shrink:0;"><?php echo $pt; ?></div>
+                                        <?php foreach ($primaryTeeth as $pt): ?>
+                                        <div class="tooth-btn" data-tooth="<?= $pt ?>" title="Primary tooth <?= $pt ?>"
+                                             style="width:30px;height:30px;border-radius:50%;background:#E2E8F0;border:1px solid #CBD5E1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#94A3B8;font-weight:600;transition:all 0.12s;flex-shrink:0;">
+                                            <?= $pt ?>
+                                        </div>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
 
-                                <div style="text-align:center;margin-top:12px;">
-                                    <button type="button" id="clearTeeth" style="font-size:0.75rem;padding:4px 12px;background:none;border:1px solid var(--gray-300);border-radius:6px;cursor:pointer;color:var(--gray-500);">✕ Clear Selection</button>
+                                <!-- Selected display + clear -->
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px;">
+                                    <span id="selectedTeethDisplay" style="font-size:0.78rem;color:var(--gray-500);">
+                                        No teeth selected — click teeth to tag them
+                                    </span>
+                                    <button type="button" id="clearTeeth"
+                                            style="font-size:0.75rem;padding:4px 12px;background:none;border:1px solid var(--gray-300);border-radius:6px;cursor:pointer;color:var(--gray-500);">
+                                        ✕ Clear Selection
+                                    </button>
                                 </div>
                             </div>
-                            <!-- Hidden input storing selected teeth -->
-                            <input type="text" name="tooth_number" id="toothNumberInput" class="form-control mt-2" placeholder="Or type directly, e.g. 16, 21 — chart will sync" value="">
+
+                            <!-- Synced text input -->
+                            <input type="text" name="tooth_number" id="toothNumberInput" class="form-control mt-2"
+                                   placeholder="Or type directly, e.g. 16, 21 — chart will sync" value="">
                             <small style="color:var(--gray-400);font-size:0.75rem;">Selected teeth update this field automatically. You can also type here manually.</small>
                         </div>
+                        <!-- ═══════════════════════ END TOOTH CHART ═══════════════ -->
 
-                        <!-- =====================================================================
-                             BUG FIX #1 + #4 — Tooth Condition (tooth_status) selector.
-                             This field was completely missing. Without it, every record saved
-                             as 'normal' regardless of treatment, making the odontogram useless.
-                             Selecting a tooth on the chart AND picking the condition here gives
-                             the DB the full picture it needs for persistent history.
-                        ===================================================================== -->
+                        <!-- Tooth Condition selector -->
                         <div class="col-md-4">
                             <label class="form-label">
                                 Tooth Condition
@@ -453,14 +473,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <option value="implant">Implant</option>
                                 <option value="denture">Denture</option>
                             </select>
-                            <small style="color:var(--gray-400);font-size:0.72rem;">
-                                This records the condition of the tooth/teeth listed above in the chart.
-                            </small>
+                            <small style="color:var(--gray-400);font-size:0.72rem;">Condition applies to all teeth selected on the chart above.</small>
                         </div>
-                        <!-- Condition preview badge — updates live as the select changes -->
                         <div class="col-md-8" style="display:flex;align-items:flex-end;padding-bottom:6px;">
-                            <div id="conditionPreview" style="display:none;padding:7px 14px;border-radius:8px;font-size:0.8rem;font-weight:600;transition:all 0.2s;">
-                            </div>
+                            <div id="conditionPreview" style="display:none;padding:7px 14px;border-radius:8px;font-size:0.8rem;font-weight:600;transition:all 0.2s;"></div>
                         </div>
 
                         <div class="col-md-12">
@@ -491,7 +507,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 <?php include '../../includes/footer.php'; ?>
 <script>
-// ── Patient change → reload appointments via API ──────────────────────────
+// ── Patient change → reload appointments ──────────────────────────────────
 document.getElementById('patient_select').addEventListener('change', function() {
     var pid    = this.value;
     var select = document.getElementById('appt_select');
@@ -512,123 +528,224 @@ document.getElementById('patient_select').addEventListener('change', function() 
 
 // ── Tooth Chart Logic ─────────────────────────────────────────────────────
 (function() {
-    var selected = new Set();
-    var input    = document.getElementById('toothNumberInput');
-    var SELECTED_BG     = 'var(--blue-500)';
-    var SELECTED_COLOR  = '#fff';
-    var SELECTED_BORDER = 'var(--blue-600)';
-    var DEFAULT_BG      = 'var(--gray-200)';
-    var DEFAULT_COLOR   = 'var(--gray-600)';
-    var DEFAULT_BORDER  = 'var(--gray-300)';
+    var selected    = new Set();
+    var input       = document.getElementById('toothNumberInput');
+    var statusSel   = document.getElementById('tooth_status_select');
+    var displayEl   = document.getElementById('selectedTeethDisplay');
+
+    // CSS class names for each status
+    var STATUS_CLASSES = {
+        normal:'s-normal', caries:'s-caries', filling:'s-filling',
+        extraction:'s-extraction', missing:'s-missing', crown:'s-crown',
+        rootcanal:'s-rootcanal', bridge:'s-bridge', implant:'s-implant',
+        denture:'s-denture'
+    };
+    var ALL_STATUS_CLS = Object.values(STATUS_CLASSES);
+
+    function currentStatusCls() {
+        return STATUS_CLASSES[statusSel.value] || 's-selected';
+    }
+
+    function updateSelectedCount() {
+        if (selected.size === 0) {
+            displayEl.textContent = 'No teeth selected — click teeth to tag them';
+        } else {
+            var nums = [...selected].sort((a,b) => {
+                var na = parseInt(a), nb = parseInt(b);
+                return isNaN(na)||isNaN(nb) ? a.localeCompare(b) : na - nb;
+            });
+            displayEl.innerHTML = '<strong style="color:var(--blue-600);">' + selected.size +
+                ' tooth' + (selected.size > 1 ? 'set' : '') + ' tagged:</strong> ' +
+                nums.map(t => '<span style="display:inline-block;background:var(--blue-50);border:1px solid var(--blue-200);border-radius:4px;padding:1px 5px;font-size:0.75rem;margin:1px;">'+t+'</span>').join(' ');
+        }
+    }
 
     function syncInputFromSet() {
-        input.value = Array.from(selected).sort((a, b) => {
+        var nums = [...selected].sort((a,b) => {
             var na = parseInt(a), nb = parseInt(b);
-            return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
-        }).join(', ');
+            return isNaN(na)||isNaN(nb) ? a.localeCompare(b) : na - nb;
+        });
+        input.value = nums.join(', ');
+        updateSelectedCount();
+    }
+
+    function applyToothState(btn, tooth) {
+        btn.classList.remove(...ALL_STATUS_CLS, 's-selected');
+        if (selected.has(tooth)) {
+            btn.classList.add(currentStatusCls());
+            // Also update data-dot color for primary teeth circles
+            if (!btn.closest('svg')) {
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }
+        } else {
+            if (!btn.closest('svg')) {
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+            }
+        }
     }
 
     function syncChartFromInput() {
-        var raw   = input.value;
-        var parts = raw.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
+        var parts = input.value.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
         selected.clear();
         parts.forEach(t => selected.add(t));
-        document.querySelectorAll('.tooth-btn').forEach(function(btn) {
-            var t = btn.dataset.tooth;
-            if (selected.has(t)) {
-                btn.style.background  = SELECTED_BG;
-                btn.style.color       = SELECTED_COLOR;
-                btn.style.borderColor = SELECTED_BORDER;
-                btn.style.transform   = 'scale(1.12)';
-                btn.style.boxShadow   = '0 2px 8px rgba(37,99,235,0.35)';
-            } else {
-                btn.style.background  = DEFAULT_BG;
-                btn.style.color       = DEFAULT_COLOR;
-                btn.style.borderColor = DEFAULT_BORDER;
-                btn.style.transform   = '';
-                btn.style.boxShadow   = '';
-            }
+        document.querySelectorAll('.tooth-btn').forEach(btn => {
+            applyToothState(btn, btn.dataset.tooth);
         });
+        updateSelectedCount();
     }
 
+    // Click handler
     document.querySelectorAll('.tooth-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var t = this.dataset.tooth;
             if (selected.has(t)) {
                 selected.delete(t);
-                this.style.background  = DEFAULT_BG;
-                this.style.color       = DEFAULT_COLOR;
-                this.style.borderColor = DEFAULT_BORDER;
-                this.style.transform   = '';
-                this.style.boxShadow   = '';
+                this.classList.remove(...ALL_STATUS_CLS, 's-selected');
+                // Reset circle primary teeth style
+                if (!this.closest('svg')) {
+                    this.style.background   = '';
+                    this.style.borderColor  = '';
+                    this.style.color        = '';
+                    this.style.transform    = '';
+                    this.style.boxShadow    = '';
+                }
             } else {
                 selected.add(t);
-                this.style.background  = SELECTED_BG;
-                this.style.color       = SELECTED_COLOR;
-                this.style.borderColor = SELECTED_BORDER;
-                this.style.transform   = 'scale(1.12)';
-                this.style.boxShadow   = '0 2px 8px rgba(37,99,235,0.35)';
+                this.classList.add(currentStatusCls());
+                // Style primary circle teeth
+                if (!this.closest('svg')) {
+                    this.style.transform  = 'scale(1.12)';
+                    this.style.boxShadow  = '0 2px 8px rgba(37,99,235,0.35)';
+                }
             }
             syncInputFromSet();
         });
-        btn.addEventListener('mouseenter', function() {
-            if (!selected.has(this.dataset.tooth)) {
-                this.style.background  = 'var(--blue-100)';
-                this.style.borderColor = 'var(--blue-300)';
-            }
-        });
-        btn.addEventListener('mouseleave', function() {
-            if (!selected.has(this.dataset.tooth)) {
-                this.style.background  = DEFAULT_BG;
-                this.style.borderColor = DEFAULT_BORDER;
-            }
-        });
+
+        // Hover for primary circle teeth (not SVG g elements)
+        if (!btn.closest('svg')) {
+            btn.addEventListener('mouseenter', function() {
+                if (!selected.has(this.dataset.tooth)) {
+                    this.style.background = '#DBEAFE';
+                    this.style.borderColor = '#93C5FD';
+                }
+            });
+            btn.addEventListener('mouseleave', function() {
+                if (!selected.has(this.dataset.tooth)) {
+                    this.style.background   = '';
+                    this.style.borderColor  = '';
+                }
+            });
+        }
     });
 
+    // Status change → re-color all selected teeth
+    statusSel.addEventListener('change', function() {
+        var cls = currentStatusCls();
+        document.querySelectorAll('.tooth-btn').forEach(btn => {
+            if (selected.has(btn.dataset.tooth)) {
+                btn.classList.remove(...ALL_STATUS_CLS, 's-selected');
+                btn.classList.add(cls);
+            }
+        });
+        updateConditionPreview();
+    });
+
+    // Manual text input
     input.addEventListener('input', syncChartFromInput);
 
+    // Clear
     document.getElementById('clearTeeth').addEventListener('click', function() {
         selected.clear();
         input.value = '';
-        syncChartFromInput();
+        document.querySelectorAll('.tooth-btn').forEach(btn => {
+            btn.classList.remove(...ALL_STATUS_CLS, 's-selected');
+            if (!btn.closest('svg')) {
+                btn.style.background = btn.style.borderColor = btn.style.color = '';
+                btn.style.transform = btn.style.boxShadow = '';
+            }
+        });
+        updateSelectedCount();
     });
+
+    updateSelectedCount();
+
+    // ── Build colour legend ──────────────────────────────────────────────
+    var CONDITIONS = [
+        { val:'normal',    cls:'s-normal',    bg:'#BBF7D0', border:'#22C55E', label:'Normal'      },
+        { val:'caries',    cls:'s-caries',    bg:'#FDE68A', border:'#F59E0B', label:'Caries'       },
+        { val:'filling',   cls:'s-filling',   bg:'#BFDBFE', border:'#3B82F6', label:'Filling'      },
+        { val:'extraction',cls:'s-extraction',bg:'#FECACA', border:'#EF4444', label:'Extraction'   },
+        { val:'missing',   cls:'s-missing',   bg:'#F1F5F9', border:'#94A3B8', label:'Missing'      },
+        { val:'crown',     cls:'s-crown',     bg:'#E9D5FF', border:'#A855F7', label:'Crown'        },
+        { val:'rootcanal', cls:'s-rootcanal', bg:'#FECDD3', border:'#F43F5E', label:'Root Canal'   },
+        { val:'bridge',    cls:'s-bridge',    bg:'#A7F3D0', border:'#10B981', label:'Bridge'       },
+        { val:'implant',   cls:'s-implant',   bg:'#BAE6FD', border:'#0EA5E9', label:'Implant'      },
+        { val:'denture',   cls:'s-denture',   bg:'#D6D3D1', border:'#78716C', label:'Denture'      },
+    ];
+
+    var legend = document.getElementById('chartLegend');
+    CONDITIONS.forEach(function(c) {
+        var el = document.createElement('div');
+        el.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;padding:2px 6px;border-radius:4px;border:1px solid transparent;';
+        el.innerHTML = '<span style="width:12px;height:12px;border-radius:2px;background:' + c.bg + ';border:1px solid ' + c.border + ';flex-shrink:0;display:inline-block;"></span>' +
+                       '<span style="font-size:0.68rem;color:var(--gray-600);">' + c.label + '</span>';
+        el.title = 'Click to set condition to: ' + c.label;
+        el.addEventListener('click', function() {
+            statusSel.value = c.val;
+            statusSel.dispatchEvent(new Event('change'));
+        });
+        legend.appendChild(el);
+    });
+
+    // ── Active legend item highlight ─────────────────────────────────────
+    function highlightLegend() {
+        var cur = statusSel.value;
+        legend.querySelectorAll('div').forEach(function(el, i) {
+            if (CONDITIONS[i] && CONDITIONS[i].val === cur) {
+                el.style.borderColor  = CONDITIONS[i].border;
+                el.style.background   = CONDITIONS[i].bg + '44';
+            } else {
+                el.style.borderColor  = 'transparent';
+                el.style.background   = '';
+            }
+        });
+    }
+    statusSel.addEventListener('change', highlightLegend);
+    highlightLegend();
+
 })();
 
-// ── Tooth Condition Preview Badge ─────────────────────────────────────────
-// Shows a colored pill next to the select so dentist can see at a glance
-// what condition they picked — especially useful for quick visual confirmation.
-(function() {
+// ── Condition Preview Badge ───────────────────────────────────────────────
+function updateConditionPreview() {
     var conditionColors = {
-        normal:     { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', label: '✓ Normal / Healthy'           },
-        caries:     { bg: '#fef3c7', color: '#92400e', border: '#fde68a', label: '⚠ Caries (Cavity)'            },
-        filling:    { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', label: '◈ Filling Done'               },
-        extraction: { bg: '#fef2f2', color: '#dc2626', border: '#fecaca', label: '✕ Extraction / Pulled'        },
-        missing:    { bg: '#f3f4f6', color: '#374151', border: '#d1d5db', label: '○ Already Missing'            },
-        crown:      { bg: '#fdf4ff', color: '#7e22ce', border: '#e9d5ff', label: '♛ Crown Placed'               },
-        rootcanal:  { bg: '#fff1f2', color: '#be123c', border: '#fecdd3', label: '◎ Root Canal Treated'         },
-        bridge:     { bg: '#ecfdf5', color: '#065f46', border: '#a7f3d0', label: '⇌ Bridge'                     },
-        implant:    { bg: '#f0f9ff', color: '#0369a1', border: '#bae6fd', label: '⊕ Implant'                    },
-        denture:    { bg: '#fafaf9', color: '#44403c', border: '#d6d3d1', label: '⬡ Denture'                     }
+        normal:     { bg:'#f0fdf4', color:'#15803d', border:'#bbf7d0', label:'✓ Normal / Healthy'    },
+        caries:     { bg:'#fef3c7', color:'#92400e', border:'#fde68a', label:'⚠ Caries (Cavity)'     },
+        filling:    { bg:'#eff6ff', color:'#1d4ed8', border:'#bfdbfe', label:'◈ Filling Done'         },
+        extraction: { bg:'#fef2f2', color:'#dc2626', border:'#fecaca', label:'✕ Extraction / Pulled'  },
+        missing:    { bg:'#f3f4f6', color:'#374151', border:'#d1d5db', label:'○ Already Missing'      },
+        crown:      { bg:'#fdf4ff', color:'#7e22ce', border:'#e9d5ff', label:'♛ Crown Placed'         },
+        rootcanal:  { bg:'#fff1f2', color:'#be123c', border:'#fecdd3', label:'◎ Root Canal Treated'   },
+        bridge:     { bg:'#ecfdf5', color:'#065f46', border:'#a7f3d0', label:'⇌ Bridge'               },
+        implant:    { bg:'#f0f9ff', color:'#0369a1', border:'#bae6fd', label:'⊕ Implant'              },
+        denture:    { bg:'#fafaf9', color:'#44403c', border:'#d6d3d1', label:'⬡ Denture'              },
     };
-
     var select  = document.getElementById('tooth_status_select');
     var preview = document.getElementById('conditionPreview');
-
-    function updatePreview() {
-        var val = select.value;
-        var cfg = conditionColors[val];
-        if (!cfg) { preview.style.display = 'none'; return; }
-        preview.style.display     = 'inline-flex';
-        preview.style.background  = cfg.bg;
-        preview.style.color       = cfg.color;
-        preview.style.border      = '1px solid ' + cfg.border;
-        preview.textContent       = cfg.label;
-    }
-
-    select.addEventListener('change', updatePreview);
-    updatePreview(); // run on page load
-})();
-// ── END TOOTH CHART ───────────────────────────────────────────────────────
+    var val = select.value;
+    var cfg = conditionColors[val];
+    if (!cfg) { preview.style.display = 'none'; return; }
+    preview.style.display     = 'inline-flex';
+    preview.style.background  = cfg.bg;
+    preview.style.color       = cfg.color;
+    preview.style.border      = '1px solid ' + cfg.border;
+    preview.textContent       = cfg.label;
+}
+document.getElementById('tooth_status_select').addEventListener('change', updateConditionPreview);
+updateConditionPreview();
 </script>
 </body>
 </html>
