@@ -35,6 +35,21 @@ $stmt->close();
 
 if (!$r) { header('Location: list.php'); exit(); }
 
+// Fetch other dental records for this patient — must be done here before HTML output
+$other_stmt = $conn->prepare("
+    SELECT dr.id, dr.visit_date, dr.tooth_number, dr.tooth_status, dr.treatment_done,
+           s.service_name
+    FROM dental_records dr
+    LEFT JOIN services s ON dr.service_id = s.id
+    WHERE dr.patient_id = ? AND dr.id != ?
+    ORDER BY dr.visit_date DESC
+    LIMIT 5
+");
+$other_stmt->bind_param('ii', $r['pid'], $id);
+$other_stmt->execute();
+$other_records = $other_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$other_stmt->close();
+
 // Tooth status label + color map
 $status_map = [
     'normal'    => ['label' => 'Normal / Healthy',     'bg' => '#f0fdf4', 'color' => '#15803d', 'border' => '#bbf7d0'],
@@ -329,21 +344,6 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                 </div>
 
                 <!-- Other dental records for this patient -->
-                <?php
-                $other_stmt = $conn->prepare("
-                    SELECT dr.id, dr.visit_date, dr.tooth_number, dr.tooth_status, dr.treatment_done,
-                           s.service_name
-                    FROM dental_records dr
-                    LEFT JOIN services s ON dr.service_id = s.id
-                    WHERE dr.patient_id = ? AND dr.id != ?
-                    ORDER BY dr.visit_date DESC
-                    LIMIT 5
-                ");
-                $other_stmt->bind_param('ii', $r['pid'], $id);
-                $other_stmt->execute();
-                $other_records = $other_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-                $other_stmt->close();
-                ?>
                 <?php if (!empty($other_records)): ?>
                 <div class="card">
                     <div class="card-header">
