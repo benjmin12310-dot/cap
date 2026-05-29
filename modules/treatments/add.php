@@ -503,11 +503,79 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
                 </form>
             </div>
         </div>
+
+        <?php if ($pre_patient_id && (!empty($past_treatments) || $outstanding > 0)): ?>
+        <div style="display:grid;grid-template-columns:<?php echo $outstanding > 0 ? '1fr 1fr' : '1fr'; ?>;gap:18px;margin-top:18px;" class="treatment-context-grid">
+
+            <?php if ($outstanding > 0): ?>
+            <div class="card" style="border-left:3px solid #f59e0b;">
+                <div class="card-body" style="padding:14px 18px;">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <i class="bi bi-exclamation-circle-fill" style="font-size:1.2rem;color:#f59e0b;flex-shrink:0;"></i>
+                        <div>
+                            <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-400);font-weight:600;">Outstanding Balance</div>
+                            <div style="font-size:1.3rem;font-weight:700;color:#92400e;">₱<?php echo number_format($outstanding, 2); ?></div>
+                            <div style="font-size:0.75rem;color:var(--gray-500);">Patient has unpaid bills</div>
+                        </div>
+                        <a href="../billing/list.php?patient_id=<?php echo $pre_patient_id; ?>" class="btn btn-sm btn-outline-warning ms-auto" style="flex-shrink:0;">
+                            <i class="bi bi-receipt"></i> View Bills
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($past_treatments)): ?>
+            <div class="card" <?php echo $outstanding > 0 ? '' : 'style="margin-top:0;"'; ?>>
+                <div class="card-header" style="font-size:0.82rem;">
+                    <i class="bi bi-clock-history" style="color:var(--blue-500);margin-right:6px;"></i>
+                    Past Treatments
+                    <span style="margin-left:auto;font-size:0.72rem;color:var(--gray-400);">Most recent <?php echo count($past_treatments); ?></span>
+                    <a href="list.php?patient_id=<?php echo $pre_patient_id; ?>" style="margin-left:10px;font-size:0.72rem;color:var(--blue-500);">View all</a>
+                </div>
+                <div class="card-body p-0">
+                    <?php foreach ($past_treatments as $pt): ?>
+                    <div style="padding:10px 16px;border-bottom:1px solid var(--gray-100);">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                            <div style="min-width:0;">
+                                <div style="font-size:0.8rem;font-weight:600;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    <?php echo htmlspecialchars($pt['service_name'] ?? 'Treatment'); ?>
+                                    <?php if ($pt['tooth_number']): ?>
+                                    <span style="font-weight:400;color:var(--gray-400);font-size:0.72rem;">· Tooth <?php echo htmlspecialchars($pt['tooth_number']); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div style="font-size:0.75rem;color:var(--gray-500);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    <?php echo htmlspecialchars(strlen($pt['treatment_done']) > 70 ? substr($pt['treatment_done'], 0, 70).'…' : $pt['treatment_done']); ?>
+                                </div>
+                                <?php if ($pt['medications_prescribed']): ?>
+                                <div style="font-size:0.72rem;color:var(--gray-400);margin-top:2px;"><i class="bi bi-capsule" style="font-size:0.65rem;"></i> <?php echo htmlspecialchars(strlen($pt['medications_prescribed']) > 50 ? substr($pt['medications_prescribed'],0,50).'…' : $pt['medications_prescribed']); ?></div>
+                                <?php endif; ?>
+                                <?php if ($pt['next_visit_notes']): ?>
+                                <div style="font-size:0.72rem;color:var(--blue-400);margin-top:2px;"><i class="bi bi-arrow-right-circle" style="font-size:0.65rem;"></i> <?php echo htmlspecialchars(strlen($pt['next_visit_notes']) > 50 ? substr($pt['next_visit_notes'],0,50).'…' : $pt['next_visit_notes']); ?></div>
+                                <?php endif; ?>
+                            </div>
+                            <div style="font-size:0.72rem;color:var(--gray-400);white-space:nowrap;flex-shrink:0;text-align:right;">
+                                <?php echo date('M d, Y', strtotime($pt['visit_date'])); ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+        </div>
+        <style>
+        @media (max-width: 768px) {
+            .treatment-context-grid { grid-template-columns: 1fr !important; }
+        }
+        </style>
+        <?php endif; ?>
     </div>
 </div>
 <?php include '../../includes/footer.php'; ?>
 <script>
-// ── Patient change → reload appointments ──────────────────────────────────
+// ── Patient change → reload appointments + pre-color tooth chart ──────────
 document.getElementById('patient_select').addEventListener('change', function() {
     var pid    = this.value;
     var select = document.getElementById('appt_select');
@@ -521,9 +589,44 @@ document.getElementById('patient_select').addEventListener('change', function() 
             var opt = document.createElement('option');
             opt.value = a.id;
             opt.textContent = a.appointment_code + ' — ' + a.appointment_date;
+            opt.dataset.serviceId = a.service_id || '';
             select.appendChild(opt);
         });
+
+        // Pre-color tooth chart with patient's previous tooth conditions
+        var tc = data.tooth_conditions || {};
+        var STATUS_CLASSES_MAP = {
+            normal:'s-normal', caries:'s-caries', filling:'s-filling',
+            extraction:'s-extraction', missing:'s-missing', crown:'s-crown',
+            rootcanal:'s-rootcanal', bridge:'s-bridge', implant:'s-implant',
+            denture:'s-denture'
+        };
+        var ALL_CLS = Object.values(STATUS_CLASSES_MAP).concat(['s-selected']);
+        document.querySelectorAll('.tooth-btn').forEach(function(btn) {
+            var t = btn.dataset.tooth;
+            btn.classList.remove.apply(btn.classList, ALL_CLS);
+            if (tc[t]) {
+                var cls = STATUS_CLASSES_MAP[tc[t]];
+                if (cls) btn.classList.add(cls);
+                // Style primary circle teeth
+                if (!btn.closest('svg') && tc[t]) {
+                    btn.style.opacity = '0.6';
+                }
+            } else if (!btn.closest('svg')) {
+                btn.style.opacity = '';
+            }
+        });
     });
+});
+
+// ── Appointment change → pre-fill service ────────────────────────────────
+document.getElementById('appt_select').addEventListener('change', function() {
+    var opt = this.options[this.selectedIndex];
+    var sid = opt && opt.dataset && opt.dataset.serviceId;
+    if (sid) {
+        var svc = document.querySelector('select[name="service_id"]');
+        if (svc) svc.value = sid;
+    }
 });
 
 // ── Tooth Chart Logic ─────────────────────────────────────────────────────
@@ -555,7 +658,7 @@ document.getElementById('patient_select').addEventListener('change', function() 
                 return isNaN(na)||isNaN(nb) ? a.localeCompare(b) : na - nb;
             });
             displayEl.innerHTML = '<strong style="color:var(--blue-600);">' + selected.size +
-                ' tooth' + (selected.size > 1 ? 'set' : '') + ' tagged:</strong> ' +
+                ' tooth' + (selected.size > 1 ? 'es' : '') + ' tagged:</strong> ' +
                 nums.map(t => '<span style="display:inline-block;background:var(--blue-50);border:1px solid var(--blue-200);border-radius:4px;padding:1px 5px;font-size:0.75rem;margin:1px;">'+t+'</span>').join(' ');
         }
     }
