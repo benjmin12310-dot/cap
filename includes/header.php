@@ -73,11 +73,10 @@ if (isset($conn) && (time() - $cache_time) > 30) {
                     aria-controls="notifPanel"
                     onclick="toggleNotifPanel(event)">
                 <i class="bi bi-bell" aria-hidden="true"></i>
-                <?php if ($notif_count > 0): ?>
-                    <span class="notif-badge" id="notifBadge" aria-hidden="true"><?php echo $notif_count > 99 ? '99+' : $notif_count; ?></span>
-                <?php else: ?>
-                    <span class="notif-badge" id="notifBadge" style="display:none;" aria-hidden="true">0</span>
-                <?php endif; ?>
+                <span class="notif-badge" id="notifBadge" aria-hidden="true"
+                      <?php if ($notif_count <= 0): ?>style="display:none;"<?php endif; ?>>
+                    <?php echo $notif_count > 99 ? '99+' : max(0, $notif_count); ?>
+                </span>
             </button>
 
             <div class="notif-panel" id="notifPanel"
