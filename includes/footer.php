@@ -9,7 +9,6 @@ $_bs_js_local = $GLOBALS['_bootstrap_js_local'] ?? file_exists(dirname(__DIR__) 
 <?php endif; ?>
 <script src="<?php echo BASE_URL; ?>assets/js/app.js"></script>
 <script src="<?php echo BASE_URL; ?>assets/js/accessibility.js"></script>
-<script src="<?php echo BASE_URL; ?>assets/js/pwa.js"></script>
 
 <!-- Global phone input sync script (used by phone_input.php component) -->
 <script>
