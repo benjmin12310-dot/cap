@@ -386,7 +386,8 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
                                 <!-- Main SVG odontogram -->
                                 <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
                                 <svg id="toothSVG" viewBox="0 0 640 148" width="640" height="148"
-                                     style="display:block;margin:0 auto;max-width:100%;min-width:520px;">
+                     role="img" aria-label="FDI dental odontogram — click a tooth to tag its condition"
+                                     style="display:block;margin:0 auto;max-width:100%;min-width:min(520px,100%);">
 
                                     <!-- UPPER JAW label -->
                                     <text x="320" y="10" text-anchor="middle" font-size="8" fill="#94A3B8"
