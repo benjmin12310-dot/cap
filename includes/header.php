@@ -82,8 +82,7 @@ if (isset($conn) && (time() - $cache_time) > 30) {
             <div class="notif-panel" id="notifPanel"
                  role="dialog"
                  aria-label="Notifications"
-                 aria-modal="false"
-                 style="display:none;">
+                 aria-modal="false">
                 <div class="notif-panel-head">
                     <span style="font-weight:700;font-size:0.88rem;">Notifications</span>
                     <?php if ($notif_count > 0): ?>
@@ -173,6 +172,16 @@ if (isset($conn) && (time() - $cache_time) > 30) {
     box-shadow: 0 8px 32px rgba(0,0,0,0.13);
     z-index: 1200;
     overflow: hidden;
+    /* Animation: hidden by default, fades+slides in when .open is added */
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.notif-panel.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 .notif-panel-head {
     display: flex;
@@ -216,7 +225,7 @@ if (isset($conn) && (time() - $cache_time) > 30) {
     flex-shrink: 0;
 }
 .notif-content { flex: 1; min-width: 0; }
-.notif-title { font-size: 0.8rem; font-weight: 600; color: var(--gray-800); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notif-title { font-size: 0.8rem; font-weight: 600; color: var(--gray-700); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .notif-msg   { font-size: 0.74rem; color: var(--gray-500); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .notif-time  { font-size: 0.68rem; color: var(--gray-400); margin-top: 3px; }
 .notif-dot   { width: 8px; height: 8px; border-radius: 50%; background: var(--blue-500); flex-shrink: 0; margin-top: 5px; }
@@ -270,8 +279,8 @@ if (isset($conn) && (time() - $cache_time) > 30) {
     var toggle    = document.getElementById('sidebar-toggle');
     var collapsed = localStorage.getItem('sidebar_collapsed') === 'true';
 
-    // Desktop: restore collapsed state from localStorage
-    if (window.innerWidth > 768 && collapsed) {
+    // Desktop only: restore collapsed state from localStorage
+    if (window.innerWidth > 992 && collapsed) {
         sidebar.classList.add('collapsed');
         if (main) main.classList.add('expanded');
     }
@@ -283,22 +292,22 @@ if (isset($conn) && (time() - $cache_time) > 30) {
     };
 
     toggle && toggle.addEventListener('click', function () {
-        if (window.innerWidth <= 768) {
-            // Mobile: toggle the slide-in drawer + backdrop
+        if (window.innerWidth <= 992) {
+            // Mobile + tablet (≤992px): toggle the slide-in overlay + backdrop
             var isOpen = sidebar.classList.toggle('mobile-open');
             var bd = document.getElementById('sidebar-backdrop');
             if (bd) bd.classList.toggle('active', isOpen);
         } else {
-            // Desktop: toggle the icon-only collapsed state
+            // Desktop only (>992px): toggle the icon-only collapsed state
             sidebar.classList.toggle('collapsed');
             if (main) main.classList.toggle('expanded');
             localStorage.setItem('sidebar_collapsed', sidebar.classList.contains('collapsed'));
         }
     });
 
-    // Close sidebar when navigating (mobile link tap)
+    // Close sidebar when navigating (mobile + tablet link tap)
     document.addEventListener('click', function(e) {
-        if (window.innerWidth > 768) return;
+        if (window.innerWidth > 992) return;
         var link = e.target.closest('#sidebar a');
         if (link) window.closeMobileSidebar();
     });
@@ -327,14 +336,13 @@ document.addEventListener('DOMContentLoaded', updateThemeIcon);
 function toggleNotifPanel(e) {
     e.stopPropagation();
     var panel = document.getElementById('notifPanel');
-    var open  = panel.style.display !== 'none';
-    panel.style.display = open ? 'none' : 'block';
+    panel.classList.toggle('open');
 }
 document.addEventListener('click', function(e) {
     var wrapper = document.getElementById('notifWrapper');
     if (wrapper && !wrapper.contains(e.target)) {
         var panel = document.getElementById('notifPanel');
-        if (panel) panel.style.display = 'none';
+        if (panel) panel.classList.remove('open');
     }
 });
 
@@ -359,7 +367,7 @@ function openNotif(id, link) {
             body: JSON.stringify({ action: 'mark_read', id: id })
         });
     }
-    document.getElementById('notifPanel').style.display = 'none';
+    document.getElementById('notifPanel').classList.remove('open');
     if (link && link !== '#') window.location.href = link;
 }
 
