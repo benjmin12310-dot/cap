@@ -42,7 +42,22 @@ function destroyChartsIn(container) {
 }
 
 // ─── PAGE INIT ────────────────────────────────────────────────────────────
+// Flag set by PJAX loader to suppress card entry animations on navigation
+var _isPjaxNav = false;
+
 function initPage() {
+
+    // 0. PJAX CARD ANIMATION SUPPRESSION
+    // On PJAX navigations, add no-anim to all cards so they don't animate in
+    if (_isPjaxNav) {
+        document.querySelectorAll('.card').forEach(function (c) { c.classList.add('no-anim'); });
+        _isPjaxNav = false;
+    }
+
+    // 0b. TABLE SCROLL FADE — only show gradient when table actually overflows
+    document.querySelectorAll('.table-responsive').forEach(function (wrap) {
+        wrap.classList.toggle('is-scrollable', wrap.scrollWidth > wrap.clientWidth);
+    });
 
     // 1. AUTO-DISMISS ALERTS
     document.querySelectorAll('.alert:not(.alert-permanent):not([data-timed])').forEach(function (el) {
@@ -247,6 +262,7 @@ function initPage() {
 
             // THIS is the key fix — re-run inline <script> tags so Chart.js works
             runScripts(curMain);
+            _isPjaxNav = true;  // suppress card animations on PJAX navigations
             initPage();
             updateActive(url);
             barDone();
