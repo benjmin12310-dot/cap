@@ -128,7 +128,7 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                 <a href="list.php" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Records
                 </a>
-                <a href="../print/medical_certificate.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                <a href="../print/dental_certificate.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
                     <i class="bi bi-file-earmark-medical"></i> Certificate
                 </a>
                 <a href="../print/prescription.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
