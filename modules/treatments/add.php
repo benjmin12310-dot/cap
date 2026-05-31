@@ -228,6 +228,12 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
 [data-theme="dark"] .tooth-btn:hover .tooth-crown,
 [data-theme="dark"] .tooth-btn:hover .tooth-root { fill: #1E3A8A; stroke: #3B82F6; }
 
+/* Primary teeth circle hover — CSS-only, no JS, subtle gray */
+.tooth-btn:not(svg g):hover {
+    background: #F1F5F9 !important;
+    border-color: #CBD5E1 !important;
+    transform: scale(1.05);
+}
 /* Mobile */
 @media (max-width: 640px) {
     .workflow-breadcrumb { overflow-x:auto!important; -webkit-overflow-scrolling:touch!important; white-space:nowrap!important; }
@@ -658,7 +664,7 @@ document.getElementById('appt_select').addEventListener('change', function() {
                 return isNaN(na)||isNaN(nb) ? a.localeCompare(b) : na - nb;
             });
             displayEl.innerHTML = '<strong style="color:var(--blue-600);">' + selected.size +
-                ' tooth' + (selected.size > 1 ? 'es' : '') + ' tagged:</strong> ' +
+                (selected.size > 1 ? selected.size + ' teeth' : '1 tooth') + ' tagged:</strong> ' +
                 nums.map(t => '<span style="display:inline-block;background:var(--blue-50);border:1px solid var(--blue-200);border-radius:4px;padding:1px 5px;font-size:0.75rem;margin:1px;">'+t+'</span>').join(' ');
         }
     }
@@ -728,21 +734,7 @@ document.getElementById('appt_select').addEventListener('change', function() {
             syncInputFromSet();
         });
 
-        // Hover for primary circle teeth (not SVG g elements)
-        if (!btn.closest('svg')) {
-            btn.addEventListener('mouseenter', function() {
-                if (!selected.has(this.dataset.tooth)) {
-                    this.style.background = '#F1F5F9';
-                    this.style.borderColor = '#CBD5E1';
-                }
-            });
-            btn.addEventListener('mouseleave', function() {
-                if (!selected.has(this.dataset.tooth)) {
-                    this.style.background   = '';
-                    this.style.borderColor  = '';
-                }
-            });
-        }
+        // Hover handled by CSS for primary circle teeth
     });
 
     // Status change → re-color all selected teeth
