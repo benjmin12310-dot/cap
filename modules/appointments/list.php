@@ -81,6 +81,23 @@ $appointments = $conn->query("
 /* Uniform minimum height on all action buttons */
 #appointmentsTable td a[style],
 #appointmentsTable td button[style] { box-sizing: border-box; min-height: 30px; }
+
+/* Dark mode: filter bar inputs and selects */
+[data-theme="dark"] .mobile-filter-bar input,
+[data-theme="dark"] .mobile-filter-bar select {
+    background: var(--gray-200) !important;
+    color: var(--gray-900) !important;
+    border-color: var(--gray-300) !important;
+}
+[data-theme="dark"] .mobile-filter-bar input::placeholder {
+    color: var(--gray-500) !important;
+}
+/* Dark mode: status tab inactive state */
+[data-theme="dark"] .mobile-tab-bar a {
+    background: var(--gray-200) !important;
+    border-color: var(--gray-300) !important;
+    color: var(--gray-600) !important;
+}
 </style>
 </head>
 <body>
@@ -92,7 +109,7 @@ $appointments = $conn->query("
         <!-- ── Page Header ─────────────────────────────────────── -->
         <div class="page-header-bar" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px;background:var(--white);border:var(--border);border-radius:14px;padding:12px 18px;box-shadow:0 1px 6px rgba(0,0,0,0.05);">
             <div style="display:flex;align-items:center;gap:10px;">
-                <div style="width:40px;height:40px;background:linear-gradient(135deg,#2563eb,#60a5fa);border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <div style="width:40px;height:40px;background:linear-gradient(135deg,var(--blue-500),var(--blue-400));border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     <i class="bi bi-calendar2-check" style="color:var(--white);font-size:1.1rem;"></i>
                 </div>
                 <div>
@@ -101,7 +118,7 @@ $appointments = $conn->query("
                 </div>
             </div>
             <div style="margin-left:auto;">
-                <button onclick="openWalkinDrawer()" style="display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:10px;background:linear-gradient(135deg,#16a34a,#22c55e);color:var(--white);border:none;font-size:0.84rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(22,163,74,0.3);transition:all 0.15s;" onmouseover="this.style.boxShadow='0 4px 14px rgba(22,163,74,0.45)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(22,163,74,0.3)'">
+                <button onclick="openWalkinDrawer()" style="display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:10px;background:linear-gradient(135deg,var(--success),var(--success-light));color:var(--white);border:none;font-size:0.84rem;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(22,163,74,0.3);transition:all 0.15s;" onmouseover="this.style.boxShadow='0 4px 14px rgba(22,163,74,0.45)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(22,163,74,0.3)'">
                     <i class="bi bi-plus-circle-fill" style="font-size:0.95rem;"></i> New Appointment
                 </button>
             </div>
@@ -111,21 +128,21 @@ $appointments = $conn->query("
         <div class="mobile-tab-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
             <?php
             $tab_statuses = [
-                '' => ['label'=>'All', 'icon'=>'bi-grid-3x3-gap', 'color'=>'#2563eb', 'bg'=>'#eff6ff', 'border'=>'#bfdbfe'],
-                'pending'   => ['label'=>'Pending',   'icon'=>'bi-clock', 'color'=>'#d97706', 'bg'=>'#fffbeb', 'border'=>'#fde68a'],
-                'confirmed' => ['label'=>'Confirmed', 'icon'=>'bi-check-circle', 'color'=>'#2563eb', 'bg'=>'#eff6ff', 'border'=>'#bfdbfe'],
-                'completed' => ['label'=>'Completed', 'icon'=>'bi-check2-all', 'color'=>'#16a34a', 'bg'=>'#f0fdf4', 'border'=>'#bbf7d0'],
-                'cancelled' => ['label'=>'Cancelled', 'icon'=>'bi-x-circle', 'color'=>'#dc2626', 'bg'=>'#fff1f2', 'border'=>'#fecdd3'],
-                'no-show'   => ['label'=>'No-show',   'icon'=>'bi-person-dash', 'color'=>'#64748b', 'bg'=>'var(--gray-50)', 'border'=>'#e2e8f0'],
+                '' => ['label'=>'All', 'icon'=>'bi-grid-3x3-gap', 'color'=>'var(--primary)', 'bg'=>'var(--primary-bg)', 'border'=>'var(--blue-200)'],
+                'pending'   => ['label'=>'Pending',   'icon'=>'bi-clock', 'color'=>'var(--warning)', 'bg'=>'var(--warning-bg)', 'border'=>'var(--warning-border)'],
+                'confirmed' => ['label'=>'Confirmed', 'icon'=>'bi-check-circle', 'color'=>'var(--primary)', 'bg'=>'var(--primary-bg)', 'border'=>'var(--blue-200)'],
+                'completed' => ['label'=>'Completed', 'icon'=>'bi-check2-all', 'color'=>'var(--success)', 'bg'=>'var(--success-bg)', 'border'=>'var(--success-border)'],
+                'cancelled' => ['label'=>'Cancelled', 'icon'=>'bi-x-circle', 'color'=>'var(--danger)', 'bg'=>'var(--danger-bg)', 'border'=>'var(--danger-border)'],
+                'no-show'   => ['label'=>'No-show',   'icon'=>'bi-person-dash', 'color'=>'var(--gray-500)', 'bg'=>'var(--gray-100)', 'border'=>'var(--gray-200)'],
             ];
             foreach ($tab_statuses as $val => $tab):
                 $isActive = ($status_filter === $val);
                 $href = 'list.php?' . ($val ? 'status=' . $val . '&' : '') . ($search ? 'search=' . urlencode($search) . '&' : '') . ($doctor_filter ? 'doctor_id=' . $doctor_filter . '&' : '');
             ?>
             <a href="<?php echo $href; ?>" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;font-size:0.76rem;font-weight:700;text-decoration:none;transition:all 0.15s;
-                border:1.5px solid <?php echo $isActive ? $tab['color'] : '#e2e8f0'; ?>;
+                border:1.5px solid <?php echo $isActive ? $tab['color'] : 'var(--gray-200)'; ?>;
                 background:<?php echo $isActive ? $tab['bg'] : 'var(--white)'; ?>;
-                color:<?php echo $isActive ? $tab['color'] : '#64748b'; ?>;
+                color:<?php echo $isActive ? $tab['color'] : 'var(--gray-500)'; ?>;
                 box-shadow:<?php echo $isActive ? '0 2px 8px rgba(0,0,0,0.08)' : 'none'; ?>;">
                 <i class="bi <?php echo $tab['icon']; ?>"></i>
                 <?php echo $tab['label']; ?>
@@ -139,28 +156,28 @@ $appointments = $conn->query("
             <div class="mobile-filter-bar" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                 <div style="position:relative;flex:1;min-width:200px;">
                     <i class="bi bi-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:0.82rem;"></i>
-                    <input type="text" name="search" style="width:100%;padding:8px 12px 8px 32px;border:1.5px solid var(--gray-200);border-radius:9px;font-size:0.82rem;outline:none;transition:border 0.15s;" placeholder="Search patient or code…" value="<?php echo htmlspecialchars($search); ?>" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                    <input type="text" name="search" style="width:100%;padding:8px 12px 8px 32px;border:1.5px solid var(--gray-200);border-radius:9px;font-size:0.82rem;outline:none;transition:border 0.15s;background:var(--white);color:var(--gray-900);" placeholder="Search patient or code…" value="<?php echo htmlspecialchars($search); ?>" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--gray-200)'">
                 </div>
                 <div style="position:relative;">
                     <i class="bi bi-calendar3" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:0.82rem;pointer-events:none;"></i>
-                    <input type="date" name="date" style="padding:8px 12px 8px 32px;border:1.5px solid var(--gray-200);border-radius:9px;font-size:0.82rem;outline:none;transition:border 0.15s;" value="<?php echo htmlspecialchars($date_filter); ?>" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                    <input type="date" name="date" style="padding:8px 12px 8px 32px;border:1.5px solid var(--gray-200);border-radius:9px;font-size:0.82rem;outline:none;transition:border 0.15s;background:var(--white);color:var(--gray-900);" value="<?php echo htmlspecialchars($date_filter); ?>" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--gray-200)'">
                 </div>
-                <a href="list.php?<?php echo $status_filter?'status='.urlencode($status_filter).'&':''; ?>date=<?php echo date('Y-m-d'); ?>" style="padding:8px 14px;border-radius:9px;border:1.5px solid <?php echo $date_filter===date('Y-m-d')?'#2563eb':'#e2e8f0'; ?>;background:<?php echo $date_filter===date('Y-m-d')?'#eff6ff':'var(--white)'; ?>;color:<?php echo $date_filter===date('Y-m-d')?'#2563eb':'#64748b'; ?>;font-size:0.78rem;font-weight:700;text-decoration:none;white-space:nowrap;">
+                <a href="list.php?<?php echo $status_filter?'status='.urlencode($status_filter).'&':''; ?>date=<?php echo date('Y-m-d'); ?>" style="padding:8px 14px;border-radius:9px;border:1.5px solid <?php echo $date_filter===date('Y-m-d')?'var(--primary)':'var(--gray-200)'; ?>;background:<?php echo $date_filter===date('Y-m-d')?'var(--primary-bg)':'var(--white)'; ?>;color:<?php echo $date_filter===date('Y-m-d')?'var(--primary)':'var(--gray-500)'; ?>;font-size:0.78rem;font-weight:700;text-decoration:none;white-space:nowrap;">
                     Today
                 </a>
                 <?php if (!empty($all_doctors)): ?>
-                <select name="doctor_id" style="padding:8px 14px;border:1.5px solid var(--gray-200);border-radius:9px;font-size:0.82rem;outline:none;background:var(--white);color:var(--gray-600);transition:border 0.15s;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+                <select name="doctor_id" style="padding:8px 14px;border:1.5px solid var(--gray-200);border-radius:9px;font-size:0.82rem;outline:none;background:var(--white);color:var(--gray-600);transition:border 0.15s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--gray-200)'">
                     <option value="">All Doctors</option>
                     <?php foreach ($all_doctors as $d): ?>
                     <option value="<?php echo $d['id']; ?>" <?php echo $doctor_filter == $d['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($d['full_name']); ?></option>
                     <?php endforeach; ?>
                 </select>
                 <?php endif; ?>
-                <button type="submit" style="padding:8px 20px;border-radius:9px;background:#2563eb;color:var(--white);border:none;font-size:0.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background 0.15s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                <button type="submit" style="padding:8px 20px;border-radius:9px;background:var(--primary);color:var(--white);border:none;font-size:0.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background 0.15s;" onmouseover="this.style.background='var(--primary-dark)'" onmouseout="this.style.background='var(--primary)'">
                     <i class="bi bi-funnel-fill"></i> Filter
                 </button>
                 <?php if ($search || $date_filter || $doctor_filter || $status_filter): ?>
-                <a href="list.php" style="padding:8px 16px;border-radius:9px;border:1.5px solid #fca5a5;background:var(--danger-bg);color:var(--danger);font-size:0.82rem;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:5px;">
+                <a href="list.php" style="padding:8px 16px;border-radius:9px;border:1.5px solid var(--danger-border);background:var(--danger-bg);color:var(--danger);font-size:0.82rem;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:5px;">
                     <i class="bi bi-x-lg"></i> Clear
                 </a>
                 <?php endif; ?>
@@ -172,7 +189,7 @@ $appointments = $conn->query("
             <div class="table-responsive" style="overflow-x:auto;">
 <table style="width:100%;border-collapse:collapse;" id="appointmentsTable" class="mobile-card-table">
                 <thead>
-                   <tr style="background:linear-gradient(to bottom,var(--gray-100),var(--gray-200));border-bottom:2px solid var(--gray-300);">
+                   <tr style="border-bottom:2px solid var(--gray-200);">
                        <th style="padding:12px 16px;font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:var(--gray-600);text-align:left;">Code</th>
                        <th style="padding:12px 16px;font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:var(--gray-600);text-align:left;">Patient</th>
                        <th style="padding:12px 16px;font-size:0.7rem;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:var(--gray-600);text-align:left;">Service</th>
@@ -197,19 +214,19 @@ $appointments = $conn->query("
                         $rowBg = $isToday ? 'background:linear-gradient(to right,var(--blue-50),var(--white));' : '';
                         // Status config
                         $sCfg = match($a['status']) {
-                            'pending'   => ['bg'=>'#fffbeb','color'=>'#d97706','border'=>'#fde68a','label'=>'Pending',   'icon'=>'bi-clock-history'],
-                            'confirmed' => ['bg'=>'#eff6ff','color'=>'#2563eb','border'=>'#bfdbfe','label'=>'Confirmed', 'icon'=>'bi-check-circle-fill'],
-                            'completed' => ['bg'=>'#f0fdf4','color'=>'#16a34a','border'=>'#bbf7d0','label'=>'Completed', 'icon'=>'bi-check2-all'],
-                            'cancelled' => ['bg'=>'#fff1f2','color'=>'#dc2626','border'=>'#fecdd3','label'=>'Cancelled', 'icon'=>'bi-x-circle-fill'],
-                            'no-show'   => ['bg'=>'var(--gray-50)','color'=>'#64748b','border'=>'#e2e8f0','label'=>'No-show',   'icon'=>'bi-person-dash'],
-                            default     => ['bg'=>'var(--gray-50)','color'=>'#94a3b8','border'=>'#e2e8f0','label'=>ucfirst($a['status']),'icon'=>'bi-circle'],
+                            'pending'   => ['bg'=>'var(--warning-bg)','color'=>'var(--warning)','border'=>'var(--warning-border)','label'=>'Pending',   'icon'=>'bi-clock-history'],
+                            'confirmed' => ['bg'=>'var(--primary-bg)','color'=>'var(--primary)','border'=>'var(--blue-200)','label'=>'Confirmed', 'icon'=>'bi-check-circle-fill'],
+                            'completed' => ['bg'=>'var(--success-bg)','color'=>'var(--success)','border'=>'var(--success-border)','label'=>'Completed', 'icon'=>'bi-check2-all'],
+                            'cancelled' => ['bg'=>'var(--danger-bg)','color'=>'var(--danger)','border'=>'var(--danger-border)','label'=>'Cancelled', 'icon'=>'bi-x-circle-fill'],
+                            'no-show'   => ['bg'=>'var(--gray-100)','color'=>'var(--gray-500)','border'=>'var(--gray-200)','label'=>'No-show',   'icon'=>'bi-person-dash'],
+                            default     => ['bg'=>'var(--gray-100)','color'=>'var(--gray-400)','border'=>'var(--gray-200)','label'=>ucfirst($a['status']),'icon'=>'bi-circle'],
                         };
                     ?>
                     <tr style="<?php echo $rowBg; ?>border-bottom:1px solid var(--gray-100);transition:background 0.15s;" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background='<?php echo $isToday ? 'linear-gradient(to right,var(--blue-50),var(--white))' : 'var(--white)'; ?>'">
                         <!-- Code -->
                         <td data-label="Code" style="padding:13px 16px;">
                             <div style="display:flex;align-items:center;gap:6px;">
-                                <?php if ($isToday): ?><span style="width:6px;height:6px;border-radius:50%;background:#2563eb;display:inline-block;flex-shrink:0;box-shadow:0 0 0 2px #bfdbfe;"></span><?php endif; ?>
+                                <?php if ($isToday): ?><span style="width:6px;height:6px;border-radius:50%;background:var(--primary);display:inline-block;flex-shrink:0;box-shadow:0 0 0 2px var(--blue-200);"></span><?php endif; ?>
                                 <span style="font-size:0.79rem;font-weight:700;color:var(--primary);font-family:monospace;"><?php echo htmlspecialchars($a['appointment_code']); ?></span>
                             </div>
                         </td>
@@ -224,7 +241,7 @@ $appointments = $conn->query("
                         <!-- Doctor -->
                         <td data-label="Doctor" style="padding:13px 16px;">
                             <?php if (!empty($a['doctor_name'])): ?>
-                            <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:linear-gradient(135deg,#2563eb,#60a5fa);color:var(--white);font-size:0.71rem;font-weight:700;white-space:nowrap;">
+                            <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:linear-gradient(135deg,var(--blue-500),var(--blue-400));color:var(--white);font-size:0.71rem;font-weight:700;white-space:nowrap;">
                                 <i class="bi bi-person-badge" style="font-size:0.68rem;"></i>
                                 <?php echo htmlspecialchars($a['doctor_name']); ?>
                             </span>
@@ -249,7 +266,7 @@ $appointments = $conn->query("
                             <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
                                 <?php if ($a['status'] === 'confirmed'): ?>
                                 <a href="<?php echo BASE_URL; ?>modules/treatments/add.php?patient_id=<?php echo $a['patient_id']; ?>&appointment_id=<?php echo $a['id']; ?>"
-                                   style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:8px;background:linear-gradient(135deg,#16a34a,#22c55e);color:var(--white);font-size:0.75rem;font-weight:700;text-decoration:none;box-shadow:0 2px 6px rgba(22,163,74,0.3);white-space:nowrap;">
+                                   style="display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:8px;background:linear-gradient(135deg,var(--success),var(--success-light));color:var(--white);font-size:0.75rem;font-weight:700;text-decoration:none;box-shadow:0 2px 6px rgba(22,163,74,0.3);white-space:nowrap;">
                                     <i class="bi bi-person-check-fill"></i> Check-in
                                 </a>
                                 <?php elseif ($a['status'] === 'completed'): ?>
@@ -259,7 +276,7 @@ $appointments = $conn->query("
                                 </a>
                                 <?php if (!empty($a['bill_id'])): ?>
                                 <a href="<?php echo BASE_URL; ?>modules/billing/view.php?id=<?php echo $a['bill_id']; ?>"
-                                   style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;font-size:0.75rem;font-weight:700;text-decoration:none;white-space:nowrap;<?php echo $a['bill_status'] === 'paid' ? 'background:linear-gradient(135deg,#16a34a,#22c55e);color:var(--white);box-shadow:0 2px 6px rgba(22,163,74,0.25);' : 'background:var(--warning-bg);color:var(--warning);border:1.5px solid var(--warning-border);'; ?>">
+                                   style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:8px;font-size:0.75rem;font-weight:700;text-decoration:none;white-space:nowrap;<?php echo $a['bill_status'] === 'paid' ? 'background:linear-gradient(135deg,var(--success),var(--success-light));color:var(--white);box-shadow:0 2px 6px rgba(22,163,74,0.25);' : 'background:var(--warning-bg);color:var(--warning);border:1.5px solid var(--warning-border);'; ?>">
                                     <i class="bi bi-receipt"></i> <?php echo $a['bill_status'] === 'paid' ? 'Paid' : 'Bill'; ?>
                                 </a>
                                 <?php else: ?>
@@ -312,7 +329,7 @@ $appointments = $conn->query("
                 </a>
                 <?php endif; ?>
                 <?php for ($pg = max(1, $page - 2); $pg <= min($total_pages, $page + 2); $pg++): ?>
-                <a href="list.php?<?php echo $filter_qs; ?>page=<?php echo $pg; ?>" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;font-size:0.82rem;font-weight:700;text-decoration:none;transition:all 0.12s;<?php echo $pg === $page ? 'background:linear-gradient(135deg,#2563eb,#60a5fa);color:var(--white);border:none;box-shadow:0 2px 8px rgba(37,99,235,0.3);' : 'border:1.5px solid var(--gray-200);background:var(--white);color:var(--gray-600);'; ?>"><?php echo $pg; ?></a>
+                <a href="list.php?<?php echo $filter_qs; ?>page=<?php echo $pg; ?>" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;font-size:0.82rem;font-weight:700;text-decoration:none;transition:all 0.12s;<?php echo $pg === $page ? 'background:linear-gradient(135deg,var(--blue-500),var(--blue-400));color:var(--white);border:none;box-shadow:0 2px 8px rgba(37,99,235,0.3);' : 'border:1.5px solid var(--gray-200);background:var(--white);color:var(--gray-600);'; ?>"><?php echo $pg; ?></a>
                 <?php endfor; ?>
                 <?php if ($page < $total_pages): ?>
                 <a href="list.php?<?php echo $filter_qs; ?>page=<?php echo $page + 1; ?>" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;border:1.5px solid var(--gray-200);background:var(--white);color:var(--gray-600);font-size:0.78rem;font-weight:600;text-decoration:none;transition:all 0.12s;" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='var(--white)'">
@@ -380,17 +397,17 @@ $appointments = $conn->query("
 <div class="modal fade" id="noRecordModal" tabindex="-1">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
-            <div class="modal-header" style="border-bottom:1px solid #fde68a;background:#fffbeb;">
-                <h6 class="modal-title" style="color:#92400e;">
-                    <i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b;margin-right:6px;"></i>
+            <div class="modal-header" style="border-bottom:1px solid var(--warning-border);background:var(--warning-bg);">
+                <h6 class="modal-title" style="color:var(--warning);">
+                    <i class="bi bi-exclamation-triangle-fill" style="color:var(--warning-light);margin-right:6px;"></i>
                     No Treatment Record Yet
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="font-size:0.875rem;color:#374151;">
+            <div class="modal-body" style="font-size:0.875rem;color:var(--gray-700);">
                 <p style="margin:0 0 10px;">This appointment has <strong>no dental record</strong> attached to it yet.</p>
-                <p style="margin:0;color:#6b7280;font-size:0.8rem;">Would you like to record the treatment first, or mark it as completed anyway?</p>
-                <div style="margin-top:12px;padding:10px 12px;background:#fef3c7;border-radius:8px;border:1px solid #fde68a;font-size:0.78rem;color:#92400e;">
+                <p style="margin:0;color:var(--gray-500);font-size:0.8rem;">Would you like to record the treatment first, or mark it as completed anyway?</p>
+                <div style="margin-top:12px;padding:10px 12px;background:var(--warning-bg);border-radius:8px;border:1px solid var(--warning-border);font-size:0.78rem;color:var(--warning);">
                     <i class="bi bi-info-circle-fill" style="margin-right:5px;"></i>
                     Skipping this may leave the patient's clinical history incomplete.
                 </div>
@@ -657,7 +674,7 @@ function doConfirmAppt() {
     <div style="display:flex;align-items:flex-start;gap:10px;">
         <span style="font-size:1.4rem;">✅</span>
         <div style="flex:1;">
-            <div style="font-weight:700;margin-bottom:4px;color:#166534;" id="walkinToastTitle"></div>
+            <div style="font-weight:700;margin-bottom:4px;color:var(--success);" id="walkinToastTitle"></div>
             <div style="font-size:0.85rem;color:var(--gray-600);" id="walkinToastMsg"></div>
         </div>
         <button onclick="document.getElementById('walkinToast').style.display='none'" style="background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:1rem;padding:0;margin-left:4px;">✕</button>
@@ -788,14 +805,14 @@ function loadDrawerDateData(date) {
     .then(r => r.json())
     .then(data => {
         if (data.status !== 'success') {
-            bar.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b;"></i> ' + (data.message || 'Could not load schedule.');
+            bar.innerHTML = '<i class="bi bi-exclamation-triangle-fill" style="color:var(--warning);"></i> ' + (data.message || 'Could not load schedule.');
             return;
         }
         var sd = data.slot_data, docs = data.doctors || [];
 
         // Slot bar message
         if (sd.is_closed) {
-            bar.innerHTML = '<i class="bi bi-calendar-x" style="color:#f59e0b;"></i> <strong>' + sd.reason + '</strong>';
+            bar.innerHTML = '<i class="bi bi-calendar-x" style="color:var(--warning);"></i> <strong>' + sd.reason + '</strong>';
         } else {
             var free = (sd.total_slots||0) - (sd.booked_count||0);
             var nextPart = sd.slot ? ' · Next: <strong style="color:var(--primary);">' + sd.label + '</strong>' : '';
@@ -905,7 +922,7 @@ function submitWalkin() {
             var appt        = res.appt || {};
             var isReturning = !!res.is_returning;
             var returningBadge = isReturning
-                ? ' <span style="font-size:0.7rem;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:10px;padding:1px 6px;font-weight:600;">Returning</span>'
+                ? ' <span style="font-size:0.7rem;background:var(--primary-bg);color:var(--primary);border:1px solid var(--blue-200);border-radius:10px;padding:1px 6px;font-weight:600;">Returning</span>'
                 : '';
             var timeLabel = appt.time ? new Date('1970-01-01T' + appt.time).toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',hour12:true}) : '';
             var apptDate  = appt.date || date;
@@ -930,14 +947,14 @@ function submitWalkin() {
                     + '<td data-label="Service" style="padding:13px 16px;vertical-align:middle;">'
                         + '<div style="font-size:0.82rem;color:var(--gray-600);font-weight:500;">' + (appt.service||'--') + '</div></td>'
                     + '<td data-label="Doctor" style="padding:13px 16px;vertical-align:middle;">'
-                        + '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:linear-gradient(135deg,#2563eb,#60a5fa);color:#fff;font-size:0.71rem;font-weight:700;white-space:nowrap;">'
+                        + '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:linear-gradient(135deg,var(--blue-500),var(--blue-400));color:var(--white);font-size:0.71rem;font-weight:700;white-space:nowrap;">'
                         + '<i class="bi bi-person-badge" style="font-size:0.68rem;"></i>'
                         + (appt.doctor_name ? appt.doctor_name : 'Any') + '</span></td>'
                     + '<td data-label="Date &amp; Time" style="padding:13px 16px;vertical-align:middle;">'
                         + '<div style="font-size:0.82rem;font-weight:700;color:var(--gray-700);">' + dateLabel + '</div>'
                         + '<div style="font-size:0.73rem;color:var(--gray-400);margin-top:1px;"><i class="bi bi-clock" style="font-size:0.65rem;"></i> ' + timeLabel + '</div></td>'
                     + '<td data-label="Status" style="padding:13px 16px;vertical-align:middle;">'
-                        + '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:20px;font-size:0.73rem;font-weight:700;background:#fffbeb;color:#d97706;border:1.5px solid #fde68a;">'
+                        + '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:20px;font-size:0.73rem;font-weight:700;background:var(--warning-bg);color:var(--warning);border:1.5px solid var(--warning-border);">'
                         + '<i class="bi bi-clock-history" style="font-size:0.68rem;"></i> Pending</span></td>'
                     + '<td data-label="Actions" style="padding:13px 16px;vertical-align:middle;">'
                         + '<div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">' + cBtn + pBtn + eBtn + dBtn + '</div></td>';
