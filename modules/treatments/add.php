@@ -180,26 +180,27 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
 /* ── Tooth SVG Chart ─────────────────────────────── */
 .tooth-btn { cursor: pointer; }
 .tooth-btn .tooth-crown {
-    fill: #E2E8F0; stroke: #CBD5E1; stroke-width: 0.8;
+    fill: var(--gray-200); stroke: var(--gray-300); stroke-width: 0.8;
     transition: fill 0.12s, stroke 0.12s;
 }
 .tooth-btn .tooth-root {
-    fill: #EDF2F7; stroke: #CBD5E1; stroke-width: 0.8;
+    fill: var(--gray-100); stroke: var(--gray-300); stroke-width: 0.8;
     transition: fill 0.12s, stroke 0.12s;
 }
 .tooth-btn .tooth-num {
-    fill: #94A3B8; font-size: 8px; font-family: 'Outfit', sans-serif;
+    fill: var(--gray-400); font-size: 8px; font-family: 'Outfit', sans-serif;
     font-weight: 600; pointer-events: none;
     transition: fill 0.12s;
 }
 .tooth-btn:hover .tooth-crown,
-.tooth-btn:hover .tooth-root  { fill: #F1F5F9; stroke: #CBD5E1; }
+.tooth-btn:hover .tooth-root  { fill: var(--gray-100); stroke: var(--gray-300); }
 
 /* Selected states */
 .tooth-btn.s-selected .tooth-crown,
-.tooth-btn.s-selected .tooth-root  { fill: #2563EB; stroke: #1D4ED8; }
+.tooth-btn.s-selected .tooth-root  { fill: var(--primary); stroke: var(--primary-dark,#1D4ED8); }
 .tooth-btn.s-selected .tooth-num   { fill: #fff; }
-/* Per-condition */
+
+/* ── Per-condition: light mode ──────────────────── */
 .tooth-btn.s-normal    .tooth-crown { fill: #BBF7D0; stroke: #22C55E; }
 .tooth-btn.s-normal    .tooth-root  { fill: #DCFCE7; stroke: #22C55E; }
 .tooth-btn.s-caries    .tooth-crown { fill: #FDE68A; stroke: #F59E0B; }
@@ -221,19 +222,113 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
 .tooth-btn.s-denture   .tooth-crown { fill: #D6D3D1; stroke: #78716C; }
 .tooth-btn.s-denture   .tooth-root  { fill: #E7E5E4; stroke: #A8A29E; }
 
-/* Dark mode */
+/* ── Dark mode: base tooth ──────────────────────── */
 [data-theme="dark"] .tooth-btn .tooth-crown { fill: #334155; stroke: #475569; }
 [data-theme="dark"] .tooth-btn .tooth-root  { fill: #1E293B; stroke: #475569; }
 [data-theme="dark"] .tooth-btn .tooth-num   { fill: #64748B; }
 [data-theme="dark"] .tooth-btn:hover .tooth-crown,
 [data-theme="dark"] .tooth-btn:hover .tooth-root { fill: #1E3A8A; stroke: #3B82F6; }
 
-/* Primary teeth circle hover — CSS-only, no JS, subtle gray */
+/* ── Dark mode: per-condition (saturated so visible on dark bg) ── */
+[data-theme="dark"] .tooth-btn.s-normal    .tooth-crown { fill: #166534; stroke: #22C55E; }
+[data-theme="dark"] .tooth-btn.s-normal    .tooth-root  { fill: #14532D; stroke: #22C55E; }
+[data-theme="dark"] .tooth-btn.s-caries    .tooth-crown { fill: #92400E; stroke: #FBBF24; }
+[data-theme="dark"] .tooth-btn.s-caries    .tooth-root  { fill: #78350F; stroke: #FBBF24; }
+[data-theme="dark"] .tooth-btn.s-filling   .tooth-crown { fill: #1E40AF; stroke: #60A5FA; }
+[data-theme="dark"] .tooth-btn.s-filling   .tooth-root  { fill: #1E3A8A; stroke: #60A5FA; }
+[data-theme="dark"] .tooth-btn.s-extraction .tooth-crown { fill: #991B1B; stroke: #F87171; opacity:.9; }
+[data-theme="dark"] .tooth-btn.s-extraction .tooth-root  { fill: #7F1D1D; stroke: #F87171; opacity:.7; }
+[data-theme="dark"] .tooth-btn.s-missing   .tooth-crown { fill: #1E293B; stroke: #64748B; opacity:.6; }
+[data-theme="dark"] .tooth-btn.s-missing   .tooth-root  { fill: #0F172A; stroke: #64748B; opacity:.6; }
+[data-theme="dark"] .tooth-btn.s-crown     .tooth-crown { fill: #581C87; stroke: #D946EF; }
+[data-theme="dark"] .tooth-btn.s-crown     .tooth-root  { fill: #4A044E; stroke: #C026D3; }
+[data-theme="dark"] .tooth-btn.s-rootcanal .tooth-crown { fill: #881337; stroke: #FB7185; }
+[data-theme="dark"] .tooth-btn.s-rootcanal .tooth-root  { fill: #4C0519; stroke: #FDA4AF; }
+[data-theme="dark"] .tooth-btn.s-bridge    .tooth-crown { fill: #065F46; stroke: #34D399; }
+[data-theme="dark"] .tooth-btn.s-bridge    .tooth-root  { fill: #022C22; stroke: #34D399; }
+[data-theme="dark"] .tooth-btn.s-implant   .tooth-crown { fill: #0C4A6E; stroke: #38BDF8; }
+[data-theme="dark"] .tooth-btn.s-implant   .tooth-root  { fill: #082F49; stroke: #38BDF8; }
+[data-theme="dark"] .tooth-btn.s-denture   .tooth-crown { fill: #44403C; stroke: #A8A29E; }
+[data-theme="dark"] .tooth-btn.s-denture   .tooth-root  { fill: #292524; stroke: #78716C; }
+
+/* ── Dark mode: num text on colored states ──────── */
+[data-theme="dark"] .tooth-btn.s-normal    .tooth-num,
+[data-theme="dark"] .tooth-btn.s-caries    .tooth-num,
+[data-theme="dark"] .tooth-btn.s-filling   .tooth-num,
+[data-theme="dark"] .tooth-btn.s-extraction .tooth-num,
+[data-theme="dark"] .tooth-btn.s-crown     .tooth-num,
+[data-theme="dark"] .tooth-btn.s-rootcanal .tooth-num,
+[data-theme="dark"] .tooth-btn.s-bridge    .tooth-num,
+[data-theme="dark"] .tooth-btn.s-implant   .tooth-num,
+[data-theme="dark"] .tooth-btn.s-denture   .tooth-num { fill: #E2E8F0; }
+
+/* ── Primary teeth circles ──────────────────────── */
+/* Light mode: gray circle */
+.tooth-btn:not(svg g) {
+    background: var(--gray-200);
+    border: 1px solid var(--gray-300);
+    color: var(--gray-500);
+}
+/* Dark mode: darker circle */
+[data-theme="dark"] .tooth-btn:not(svg g) {
+    background: #334155 !important;
+    border-color: #475569 !important;
+    color: #94A3B8 !important;
+}
+/* Hover — consistent across themes */
 .tooth-btn:not(svg g):hover {
-    background: #F1F5F9 !important;
-    border-color: #CBD5E1 !important;
+    background: var(--gray-100) !important;
+    border-color: var(--gray-400) !important;
     transform: scale(1.05);
 }
+[data-theme="dark"] .tooth-btn:not(svg g):hover {
+    background: #1E3A8A !important;
+    border-color: #3B82F6 !important;
+    color: #fff !important;
+}
+/* ── SVG static element theming ─────────────────── */
+.svg-label   { fill: #94A3B8; }
+.svg-quadrant { fill: #CBD5E1; }
+.svg-midline  { stroke: #E2E8F0; }
+.svg-gum-band { fill: #F8FAFC; }
+.svg-gum-line { stroke: #CBD5E1; }
+.svg-gum-text { fill: #CBD5E1; }
+
+[data-theme="dark"] .svg-label    { fill: #475569; }
+[data-theme="dark"] .svg-quadrant { fill: #334155; }
+[data-theme="dark"] .svg-midline  { stroke: #1E293B; }
+[data-theme="dark"] .svg-gum-band { fill: #0F172A; }
+[data-theme="dark"] .svg-gum-line { stroke: #1E293B; }
+[data-theme="dark"] .svg-gum-text { fill: #1E293B; }
+
+/* ── Tooth chart wrap dark mode ─────────────────── */
+[data-theme="dark"] #toothChartWrap {
+    background: var(--gray-100) !important;
+    border-color: var(--gray-200) !important;
+}
+
+/* ── Medical alert dark mode ────────────────────── */
+[data-theme="dark"] .medical-alert-wrap {
+    background: #2d2007 !important;
+    border-color: #b45309 !important;
+}
+[data-theme="dark"] .medical-alert-wrap .alert-icon { color: #fbbf24 !important; }
+[data-theme="dark"] .medical-alert-wrap .alert-text { color: #fde68a !important; }
+[data-theme="dark"] .medical-allergy-box   { background: #450a0a !important; border-color: #991b1b !important; }
+[data-theme="dark"] .medical-allergy-title { color: #f87171 !important; }
+[data-theme="dark"] .medical-allergy-body  { color: #fca5a5 !important; }
+[data-theme="dark"] .medical-notes-box     { background: #1e3a8a !important; border-color: #3b82f6 !important; }
+[data-theme="dark"] .medical-notes-title   { color: #93c5fd !important; }
+[data-theme="dark"] .medical-notes-body    { color: #bfdbfe !important; }
+[data-theme="dark"] .medical-history-box   { background: #14532d !important; border-color: #22c55e !important; }
+[data-theme="dark"] .medical-history-title { color: #86efac !important; }
+[data-theme="dark"] .medical-history-body  { color: #bbf7d0 !important; }
+
+/* ── Condition preview badge dark mode ──────────── */
+[data-theme="dark"] #conditionPreview {
+    filter: brightness(1.25) saturate(1.4);
+}
+
 /* Mobile */
 @media (max-width: 640px) {
     .workflow-breadcrumb { overflow-x:auto!important; -webkit-overflow-scrolling:touch!important; white-space:nowrap!important; }
@@ -269,31 +364,31 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
 
         <!-- Medical alert -->
         <?php if ($pre_patient && ($pre_patient['allergies'] || $pre_patient['medical_notes'] || $pre_patient['illness_history'] || $pre_patient['blood_type'])): ?>
-        <div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;padding:14px 18px;margin-bottom:20px;">
+        <div class="medical-alert-wrap" style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;padding:14px 18px;margin-bottom:20px;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                <i class="bi bi-shield-exclamation" style="font-size:1.1rem;color:#d97706;"></i>
-                <strong style="font-size:0.85rem;color:#92400e;">Medical Alert — <?php echo e($pre_patient['last_name'].', '.$pre_patient['first_name']); ?></strong>
+                <i class="bi bi-shield-exclamation alert-icon" style="font-size:1.1rem;color:#d97706;"></i>
+                <strong class="alert-text" style="font-size:0.85rem;color:#92400e;">Medical Alert — <?php echo e($pre_patient['last_name'].', '.$pre_patient['first_name']); ?></strong>
                 <?php if ($pre_patient['blood_type']): ?>
                 <span style="margin-left:auto;background:#dc2626;color:#fff;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:20px;"><?php echo e($pre_patient['blood_type']); ?></span>
                 <?php endif; ?>
             </div>
             <div class="medical-alert-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
                 <?php if ($pre_patient['allergies']): ?>
-                <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:8px 12px;">
-                    <div style="font-size:0.7rem;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;"><i class="bi bi-exclamation-triangle-fill"></i> Allergies</div>
-                    <div style="font-size:0.8rem;color:#7f1d1d;"><?php echo e($pre_patient['allergies']); ?></div>
+                <div class="medical-allergy-box" style="background:#fef2f2;border:1px solid #fecaca;border-radius:7px;padding:8px 12px;">
+                    <div class="medical-allergy-title" style="font-size:0.7rem;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;"><i class="bi bi-exclamation-triangle-fill"></i> Allergies</div>
+                    <div class="medical-allergy-body" style="font-size:0.8rem;color:#7f1d1d;"><?php echo e($pre_patient['allergies']); ?></div>
                 </div>
                 <?php endif; ?>
                 <?php if ($pre_patient['medical_notes']): ?>
-                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:8px 12px;">
-                    <div style="font-size:0.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;"><i class="bi bi-heart-pulse-fill"></i> Medical Notes</div>
-                    <div style="font-size:0.8rem;color:#1e3a8a;"><?php echo e($pre_patient['medical_notes']); ?></div>
+                <div class="medical-notes-box" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:8px 12px;">
+                    <div class="medical-notes-title" style="font-size:0.7rem;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;"><i class="bi bi-heart-pulse-fill"></i> Medical Notes</div>
+                    <div class="medical-notes-body" style="font-size:0.8rem;color:#1e3a8a;"><?php echo e($pre_patient['medical_notes']); ?></div>
                 </div>
                 <?php endif; ?>
                 <?php if ($pre_patient['illness_history']): ?>
-                <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:8px 12px;">
-                    <div style="font-size:0.7rem;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;"><i class="bi bi-clock-history"></i> Illness History</div>
-                    <div style="font-size:0.8rem;color:#14532d;"><?php echo e($pre_patient['illness_history']); ?></div>
+                <div class="medical-history-box" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:7px;padding:8px 12px;">
+                    <div class="medical-history-title" style="font-size:0.7rem;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;"><i class="bi bi-clock-history"></i> Illness History</div>
+                    <div class="medical-history-body" style="font-size:0.8rem;color:#14532d;"><?php echo e($pre_patient['illness_history']); ?></div>
                 </div>
                 <?php endif; ?>
             </div>
@@ -390,7 +485,7 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
                                      style="display:block;margin:0 auto;max-width:100%;min-width:min(520px,100%);">
 
                                     <!-- UPPER JAW label -->
-                                    <text x="320" y="10" text-anchor="middle" font-size="8" fill="#94A3B8"
+                                    <text x="320" y="10" text-anchor="middle" font-size="8" class="svg-label"
                                           font-family="'Outfit',sans-serif" font-weight="700" letter-spacing="1.5">UPPER JAW</text>
 
                                     <!-- UPPER TEETH -->
@@ -402,13 +497,13 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
                                     <?php endforeach; ?>
 
                                     <!-- MIDLINE indicator -->
-                                    <line x1="320" y1="24" x2="320" y2="126" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="2 3" opacity="0.7"/>
+                                    <line x1="320" y1="24" x2="320" y2="126" class="svg-midline" stroke-width="1" stroke-dasharray="2 3" opacity="0.7"/>
 
                                     <!-- GUMLINE band -->
-                                    <rect x="0" y="66" width="640" height="16" fill="#F8FAFC" opacity="0.85"/>
-                                    <line x1="8"  y1="68" x2="632" y2="68" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="5 4"/>
-                                    <line x1="8"  y1="78" x2="632" y2="78" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="5 4"/>
-                                    <text x="320" y="76" text-anchor="middle" font-size="7.5" fill="#CBD5E1"
+                                    <rect x="0" y="66" width="640" height="16" class="svg-gum-band" opacity="0.85"/>
+                                    <line x1="8"  y1="68" x2="632" y2="68" class="svg-gum-line" stroke-width="1.2" stroke-dasharray="5 4"/>
+                                    <line x1="8"  y1="78" x2="632" y2="78" class="svg-gum-line" stroke-width="1.2" stroke-dasharray="5 4"/>
+                                    <text x="320" y="76" text-anchor="middle" font-size="7.5" class="svg-gum-text"
                                           font-family="'Outfit',sans-serif" font-weight="600" letter-spacing="2">GUM LINE</text>
 
                                     <!-- LOWER TEETH -->
@@ -420,12 +515,12 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
                                     <?php endforeach; ?>
 
                                     <!-- LOWER JAW label -->
-                                    <text x="320" y="148" text-anchor="middle" font-size="8" fill="#94A3B8"
+                                    <text x="320" y="148" text-anchor="middle" font-size="8" class="svg-label"
                                           font-family="'Outfit',sans-serif" font-weight="700" letter-spacing="1.5">LOWER JAW</text>
 
                                     <!-- Quadrant labels -->
-                                    <text x="155" y="10" text-anchor="middle" font-size="7" fill="#CBD5E1" font-family="'Outfit',sans-serif">← Patient Right</text>
-                                    <text x="485" y="10" text-anchor="middle" font-size="7" fill="#CBD5E1" font-family="'Outfit',sans-serif">Patient Left →</text>
+                                    <text x="155" y="10" text-anchor="middle" font-size="7" class="svg-quadrant" font-family="'Outfit',sans-serif">← Patient Right</text>
+                                    <text x="485" y="10" text-anchor="middle" font-size="7" class="svg-quadrant" font-family="'Outfit',sans-serif">Patient Left →</text>
 
                                 </svg>
                                 </div>
@@ -436,7 +531,7 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
                                     <div style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap;">
                                         <?php foreach ($primaryTeeth as $pt): ?>
                                         <div class="tooth-btn" data-tooth="<?= $pt ?>" title="Primary tooth <?= $pt ?>"
-                                             style="width:30px;height:30px;border-radius:50%;background:#E2E8F0;border:1px solid #CBD5E1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#94A3B8;font-weight:600;transition:all 0.12s;flex-shrink:0;">
+                                             style="width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:600;transition:all 0.12s;flex-shrink:0;">
                                             <?= $pt ?>
                                         </div>
                                         <?php endforeach; ?>
