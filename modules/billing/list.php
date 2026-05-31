@@ -421,18 +421,18 @@ $collection_rate = $totals['total_due'] > 0
                         <td data-label="Actions">
                             <div style="display:flex;gap:5px;">
                                 <a href="view.php?id=<?php echo $b['id']; ?>"
-                                   class="btn btn-sm btn-outline-info" title="View">
-                                    <i class="bi bi-eye"></i>
+                                   class="btn btn-sm btn-outline-info" title="View" aria-label="View bill">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
                                 </a>
                                 <?php if ($b['status'] !== 'paid'): ?>
                                 <a href="pay.php?id=<?php echo $b['id']; ?>"
-                                   class="btn btn-sm btn-outline-success" title="Record Payment">
-                                    <i class="bi bi-cash"></i>
+                                   class="btn btn-sm btn-outline-success" title="Record Payment" aria-label="Record payment">
+                                    <i class="bi bi-cash" aria-hidden="true"></i>
                                 </a>
                                 <?php endif; ?>
                                 <a href="<?php echo BASE_URL; ?>modules/print/payment_receipt.php?bill_id=<?php echo $b['id']; ?>"
-                                   target="_blank" class="btn btn-sm btn-outline-secondary" title="Print Receipt">
-                                    <i class="bi bi-printer"></i>
+                                   target="_blank" class="btn btn-sm btn-outline-secondary" title="Print Receipt" aria-label="Print receipt">
+                                    <i class="bi bi-printer" aria-hidden="true"></i>
                                 </a>
                             </div>
                         </td>
