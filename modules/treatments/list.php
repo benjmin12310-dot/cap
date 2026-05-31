@@ -138,7 +138,7 @@ $records = $conn->query("
                                             <i class="bi bi-eye"></i> View
                                         </a>
                                         <a href="../print/prescription.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print Prescription"><i class="bi bi-capsule"></i> RX</a>
-                                        <a href="../print/medical_certificate.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary" title="Medical Certificate"><i class="bi bi-file-earmark-medical"></i> Cert</a>
+                                        <a href="../print/dental_certificate.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary" title="Dental Certificate"><i class="bi bi-file-earmark-medical"></i> Cert</a>
                                     </div>
                                 </td>
                             </tr>
