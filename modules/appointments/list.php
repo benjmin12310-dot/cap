@@ -289,7 +289,7 @@ $appointments = $conn->query("
                                 <!-- Delete -->
                                 <button onclick="confirmDeleteAppt(<?php echo $a['id']; ?>, '<?php echo htmlspecialchars($a['appointment_code'], ENT_QUOTES); ?>')"
                                    style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:7px;background:var(--danger-bg);color:var(--danger);border:1.5px solid var(--danger-border);cursor:pointer;font-size:0.8rem;transition:all 0.12s;" title="Delete"
-                                   onmouseover="this.style.background='#fecdd3'" onmouseout="this.style.background='#fff1f2'">
+                                   onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='var(--danger-bg)'">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
