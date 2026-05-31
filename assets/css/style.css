@@ -855,9 +855,7 @@ a:has(.stat-card):hover .stat-value {
     transition: background var(--transition);
 }
 
-.table tbody tr:hover {
-    background: #f0f7ff;
-}
+/* tr:hover: moved to td-level rule further down for consistency — removed duplicate here */
 
 /* ============================================================
    BADGES
@@ -2736,17 +2734,7 @@ body {
     transform: translateX(2px);
 }
 
-.sidebar-nav li a.active {
-    background: linear-gradient(90deg, rgba(37, 99, 235, 0.32) 0%, rgba(37, 99, 235, 0.10) 100%);
-    color: #93c5fd;
-    border-left: 2.5px solid #3b82f6;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-}
-
-.sidebar-nav li a.active i {
-    color: #60a5fa;
-}
+/* sidebar active: single rule kept — see .sidebar-nav li a.active above */
 
 .sidebar-nav li a i {
     font-size: 1rem;
@@ -3099,9 +3087,9 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.09em;
-    color: #64748b;
-    background: #f8fafd;
-    border-bottom: 1.5px solid #e8edf5 !important;
+    color: var(--gray-500);
+    background: var(--gray-50);
+    border-bottom: 1.5px solid var(--gray-200) !important;
     white-space: nowrap;
     padding: 10px 16px;
 }
@@ -3110,9 +3098,7 @@ body {
     transition: background-color 0.12s ease;
 }
 
-.table tbody tr:hover {
-    background: #f4f8ff !important;
-}
+/* tr:hover: duplicate v3-upgrade rule removed — td-level rule handles hover */
 
 .table tbody tr:last-child td {
     border-bottom: none;
@@ -3137,11 +3123,7 @@ body {
     letter-spacing: 0.005em;
 }
 
-.btn-sm {
-    padding: 5.5px 11px;
-    font-size: 0.78rem;
-   min-height: 44px;
-}
+/* btn-sm: single definition kept at top of file — removed duplicate here */
 
 .btn-lg {
     padding: 10px 20px;
@@ -3592,11 +3574,7 @@ body,
         padding: 12px 10px;
     }
 
-    .btn-sm {
-        padding: 5px 9px;
-        font-size: 0.75rem;
-        min-height: 44px;
-    }
+    /* btn-sm mobile: keep base sizing, touch targets handled by specific icon-button rules */
 }
 
 /* ── 20. DARK MODE REFINEMENTS ─────────────────────────────── */
@@ -3704,7 +3682,7 @@ body,
 }
 
 [data-theme="dark"] .form-control::placeholder {
-    color: #374151 !important;
+    color: var(--gray-500) !important;
 }
 
 [data-theme="dark"] .input-group {
@@ -3887,10 +3865,13 @@ body.login-page::after {
     border-radius: 99px;
 }
 
-/* ── Card header colored left border ──────────────────────── */
-.card-header {
-    border-left: 3px solid var(--blue-500);
-    border-radius: 0;
+/* ── Card header top accent (border-left removed — clips at card's border-radius) ── */
+.card {
+    border-top: 3px solid var(--blue-200);
+}
+
+[data-theme="dark"] .card {
+    border-top-color: var(--blue-800);
 }
 
 /* ── Zebra stripe tables ───────────────────────────────────── */
@@ -3902,24 +3883,15 @@ body.login-page::after {
     background: #f0f7ff;
 }
 
-/* ── Better table head ─────────────────────────────────────── */
-.table thead th {
-    background: linear-gradient(to bottom, var(--gray-100), var(--gray-50));
-    border-top: 2px solid var(--blue-200);
-}
+/* ── Better table head — single canonical rule ─────────────── */
+/* (duplicate flat-color rule in v3-upgrade section already uses #f8fafd; this
+   gradient version is removed to prevent dark-mode breakage) */
 
-/* ── Empty state ───────────────────────────────────────────── */
+/* ── Empty state — emoji pseudo-element removed (cross-browser unreliable) ── */
+/* JS initPage() handles empty states with Bootstrap Icons */
 .table tbody tr td[colspan] {
     padding: 52px 20px !important;
     text-align: center;
-}
-
-.table tbody tr td[colspan]::before {
-    content: '📋';
-    display: block;
-    font-size: 2.2rem;
-    margin-bottom: 10px;
-    opacity: 0.4;
 }
 
 /* ── Search input with icon ────────────────────────────────── */
@@ -3981,12 +3953,12 @@ body.login-page::after {
     font-weight: 600;
 }
 
-/* ── Pending pulse badge ───────────────────────────────────── */
-.badge.bg-warning {
+/* ── Pending pulse badge — scoped to .pulse class only to avoid noisy table badges ── */
+.badge.bg-warning.pulse {
     position: relative;
 }
 
-.badge.bg-warning::before {
+.badge.bg-warning.pulse::before {
     content: '';
     display: inline-block;
     width: 6px;
@@ -4141,9 +4113,7 @@ td .btn-sm {
     background: var(--gray-600);
 }
 
-[data-theme="dark"] .card-header {
-    border-left-color: var(--blue-400);
-}
+/* card-header dark mode left-border removed — using border-top on .card instead */
 
 /* ============================================================
    INTERACTION AND POLISH UPGRADES
@@ -4159,15 +4129,16 @@ td .btn-sm {
     box-shadow: inset 2px 0 0 rgba(96, 165, 250, 0.4);
 }
 
-.sidebar-nav li a.active {
-    background: rgba(59, 130, 246, 0.18);
-    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.25), 0 0 16px rgba(59, 130, 246, 0.12);
-    border-left-color: transparent;
-    color: #bfdbfe;
-}
+/* sidebar active: third duplicate removed — single canonical rule at top of file */
 
 .card {
     animation: cardIn 0.35s ease both;
+}
+
+/* Suppress card animation on PJAX navigations — JS adds this class */
+.pjax-navigating .card,
+.card.no-anim {
+    animation: none !important;
 }
 
 @keyframes cardIn {
@@ -4219,10 +4190,7 @@ td .btn-sm {
     z-index: 10;
 }
 
-.table tbody tr:hover,
-.table tbody tr:nth-child(even):hover {
-    background: transparent !important;
-}
+/* Table hover: row-level transparent rule removed — td-level rule below handles hover consistently */
 
 .table tbody tr:hover td,
 .table tbody tr:nth-child(even):hover td {
@@ -4241,7 +4209,7 @@ td .btn-sm {
     -webkit-overflow-scrolling: touch;
 }
 
-.table-responsive::after {
+.table-responsive.is-scrollable::after {
     content: '';
     position: absolute;
     top: 0;
@@ -4351,7 +4319,7 @@ th.num {
     color: #e2e8f0;
 }
 
-[data-theme="dark"] .table-responsive::after {
+[data-theme="dark"] .table-responsive.is-scrollable::after {
     background: linear-gradient(to left, rgba(19, 23, 31, 0.92), transparent);
 }
 
@@ -4636,7 +4604,18 @@ th.num {
     }
 }
 
-/* Dark mode adjustments for cards */
+@media (max-width: 768px) {
+    #topbar {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: var(--white) !important;
+    }
+    [data-theme="dark"] #topbar {
+        background: #13171f !important;
+    }
+}
+
+
 [data-theme="dark"] .mobile-card-table tbody tr {
     background: var(--gray-100) !important;
     border-color: var(--gray-300) !important;
