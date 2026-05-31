@@ -50,18 +50,18 @@ $other_stmt->execute();
 $other_records = $other_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $other_stmt->close();
 
-// Tooth status label + color map
+// Tooth status label + color map (uses CSS variables — dark mode safe)
 $status_map = [
-    'normal'    => ['label' => 'Normal / Healthy',     'bg' => '#f0fdf4', 'color' => '#15803d', 'border' => '#bbf7d0'],
-    'caries'    => ['label' => 'Caries (Cavity)',       'bg' => '#fef3c7', 'color' => '#92400e', 'border' => '#fde68a'],
-    'filling'   => ['label' => 'Filling Done',          'bg' => '#eff6ff', 'color' => '#1d4ed8', 'border' => '#bfdbfe'],
-    'extraction'=> ['label' => 'Extraction / Pulled',   'bg' => '#fef2f2', 'color' => '#dc2626', 'border' => '#fecaca'],
-    'missing'   => ['label' => 'Already Missing',       'bg' => '#f3f4f6', 'color' => '#374151', 'border' => '#d1d5db'],
-    'crown'     => ['label' => 'Crown Placed',          'bg' => '#fdf4ff', 'color' => '#7e22ce', 'border' => '#e9d5ff'],
-    'rootcanal' => ['label' => 'Root Canal Treated',    'bg' => '#fff1f2', 'color' => '#be123c', 'border' => '#fecdd3'],
-    'bridge'    => ['label' => 'Bridge',                'bg' => '#ecfdf5', 'color' => '#065f46', 'border' => '#a7f3d0'],
-    'implant'   => ['label' => 'Implant',               'bg' => '#f0f9ff', 'color' => '#0369a1', 'border' => '#bae6fd'],
-    'denture'   => ['label' => 'Denture',               'bg' => '#fafaf9', 'color' => '#44403c', 'border' => '#d6d3d1'],
+    'normal'    => ['label' => 'Normal / Healthy',     'bg' => 'var(--success-bg)',  'color' => 'var(--success)',  'border' => 'var(--success-border)'],
+    'caries'    => ['label' => 'Caries (Cavity)',       'bg' => 'var(--warning-bg)',  'color' => 'var(--warning)',  'border' => 'var(--warning-border)'],
+    'filling'   => ['label' => 'Filling Done',          'bg' => 'var(--primary-bg)',  'color' => 'var(--primary)',  'border' => 'var(--blue-200)'],
+    'extraction'=> ['label' => 'Extraction / Pulled',   'bg' => 'var(--danger-bg)',   'color' => 'var(--danger)',   'border' => 'var(--danger-border)'],
+    'missing'   => ['label' => 'Already Missing',       'bg' => 'var(--gray-100)',    'color' => 'var(--gray-500)', 'border' => 'var(--gray-200)'],
+    'crown'     => ['label' => 'Crown Placed',          'bg' => '#fdf4ff',            'color' => '#7e22ce',         'border' => '#e9d5ff'],
+    'rootcanal' => ['label' => 'Root Canal Treated',    'bg' => '#fff1f2',            'color' => '#be123c',         'border' => '#fecdd3'],
+    'bridge'    => ['label' => 'Bridge',                'bg' => 'var(--success-bg)',  'color' => 'var(--success)',  'border' => 'var(--success-border)'],
+    'implant'   => ['label' => 'Implant',               'bg' => 'var(--primary-bg)',  'color' => 'var(--primary)',  'border' => 'var(--blue-200)'],
+    'denture'   => ['label' => 'Denture',               'bg' => 'var(--gray-100)',    'color' => 'var(--gray-500)', 'border' => 'var(--gray-300)'],
 ];
 $ts  = $r['tooth_status'] ?? 'normal';
 $tsc = $status_map[$ts] ?? $status_map['normal'];
@@ -104,6 +104,21 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
         gap: 10px !important;
     }
 }
+
+/* ── Medical alert — dark mode ── */
+[data-theme="dark"] .view-medical-alert {
+    background: #2d2007 !important;
+    border-color: #b45309 !important;
+}
+[data-theme="dark"] .view-alert-icon { color: #fbbf24 !important; }
+[data-theme="dark"] .view-alert-body { color: #fde68a !important; }
+
+/* ── Treatment done box — dark mode ── */
+[data-theme="dark"] .treatment-done-box {
+    background: var(--gray-100) !important;
+    border-color: var(--gray-200) !important;
+    color: var(--gray-800) !important;
+}
 </style>
 <body>
 <?php include '../../includes/sidebar.php'; ?>
@@ -139,9 +154,9 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
 
         <!-- Medical alert banner (shown if patient has relevant data) -->
         <?php if ($r['allergies'] || $r['medical_notes'] || $r['illness_history']): ?>
-        <div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:10px;">
-            <i class="bi bi-shield-exclamation" style="color:#d97706;font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
-            <div style="font-size:0.8rem;color:#92400e;">
+        <div class="view-medical-alert" style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:10px;">
+            <i class="bi bi-shield-exclamation view-alert-icon" style="color:#d97706;font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
+            <div class="view-alert-body" style="font-size:0.8rem;color:#92400e;">
                 <strong>Medical Alert</strong>
                 <?php if ($r['blood_type']): ?>
                     <span style="background:#dc2626;color:#fff;font-size:0.68rem;font-weight:700;padding:1px 7px;border-radius:20px;margin-left:8px;"><?php echo e($r['blood_type']); ?></span>
@@ -171,12 +186,12 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                     <!-- Service + Doctor row -->
                     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
                         <?php if ($r['service_name']): ?>
-                        <span style="background:rgba(37,99,235,0.08);color:#1d4ed8;border:1px solid rgba(37,99,235,0.15);border-radius:7px;padding:4px 12px;font-size:0.78rem;font-weight:600;">
+                        <span style="background:var(--primary-bg);color:var(--primary);border:1px solid var(--blue-200);border-radius:7px;padding:4px 12px;font-size:0.78rem;font-weight:600;">
                             <i class="bi bi-clipboard2-pulse"></i> <?php echo e($r['service_name']); ?>
                         </span>
                         <?php endif; ?>
                         <?php if ($r['doctor_name']): ?>
-                        <span style="background:rgba(22,163,74,0.08);color:#15803d;border:1px solid rgba(22,163,74,0.15);border-radius:7px;padding:4px 12px;font-size:0.78rem;font-weight:600;">
+                        <span style="background:var(--success-bg);color:var(--success);border:1px solid var(--success-border);border-radius:7px;padding:4px 12px;font-size:0.78rem;font-weight:600;">
                             <i class="bi bi-person-badge"></i> <?php echo e($r['doctor_name']); ?>
                         </span>
                         <?php endif; ?>
@@ -270,7 +285,7 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                     <!-- Treatment Done -->
                     <div style="margin-bottom:14px;">
                         <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-400);font-weight:600;margin-bottom:4px;">Treatment Done</div>
-                        <div style="background:var(--gray-50);border:1px solid var(--gray-100);border-radius:8px;padding:10px 12px;font-size:0.85rem;color:var(--gray-800);line-height:1.6;">
+                        <div class="treatment-done-box" style="background:var(--gray-50);border:1px solid var(--gray-100);border-radius:8px;padding:10px 12px;font-size:0.85rem;color:var(--gray-800);line-height:1.6;">
                             <?php echo e($r['treatment_done']); ?>
                         </div>
                     </div>
