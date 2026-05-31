@@ -193,7 +193,7 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
     transition: fill 0.12s;
 }
 .tooth-btn:hover .tooth-crown,
-.tooth-btn:hover .tooth-root  { fill: #DBEAFE; stroke: #93C5FD; }
+.tooth-btn:hover .tooth-root  { fill: #F1F5F9; stroke: #CBD5E1; }
 
 /* Selected states */
 .tooth-btn.s-selected .tooth-crown,
@@ -732,8 +732,8 @@ document.getElementById('appt_select').addEventListener('change', function() {
         if (!btn.closest('svg')) {
             btn.addEventListener('mouseenter', function() {
                 if (!selected.has(this.dataset.tooth)) {
-                    this.style.background = '#DBEAFE';
-                    this.style.borderColor = '#93C5FD';
+                    this.style.background = '#F1F5F9';
+                    this.style.borderColor = '#CBD5E1';
                 }
             });
             btn.addEventListener('mouseleave', function() {
