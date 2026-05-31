@@ -24,13 +24,13 @@ $record = $conn->query("
 
 if (!$record) { header('Location: ../treatments/list.php'); exit(); }
 $age = $record['date_of_birth'] ? date_diff(date_create($record['date_of_birth']), date_create('today'))->y : '—';
-$cert_num = 'MC-' . str_pad($id, 5, '0', STR_PAD_LEFT);
+$cert_num = 'DC-' . str_pad($id, 5, '0', STR_PAD_LEFT);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Medical Certificate — <?php echo e($cert_num); ?></title>
+    <title>Dental Certificate — <?php echo e($cert_num); ?></title>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>assets/css/print.css">
     <style>
     body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; margin: 0; }
@@ -80,7 +80,7 @@ $cert_num = 'MC-' . str_pad($id, 5, '0', STR_PAD_LEFT);
     <div class="cert-header">
         <div class="clinic-name">🦷 DentalCare Clinic</div>
         <div class="clinic-sub">Dental Clinic · Cebu City</div>
-        <div class="cert-title">Medical Certificate</div>
+        <div class="cert-title"> Dental Certificate</div>
         <div class="cert-num"><?php echo e($cert_num); ?></div>
     </div>
 
