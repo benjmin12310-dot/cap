@@ -218,7 +218,7 @@ $total_paid = array_sum(array_column($payments, 'amount_paid'));
                     <div class="card-body p-0">
                         <table class="info-table">
                             <tr><th>Full Name</th><td><?php echo e($patient['first_name'] . ' ' . ($patient['middle_name'] ? $patient['middle_name'] . ' ' : '') . $patient['last_name']); ?></td></tr>
-                            <tr><th>Date of Birth</th><td><?php echo $patient['date_of_birth'] ? date('M d, Y', strtotime($patient['date_of_birth'])) : '—'; ?></td></tr>
+                            <tr><th>Date of Birth</th><td><?php if ($patient['date_of_birth']): $age = (int)floor((time() - strtotime($patient['date_of_birth'])) / 31557600); echo date('M d, Y', strtotime($patient['date_of_birth'])) . ' <span style="font-size:0.78rem;color:var(--gray-400);font-weight:400;">(' . $age . ' yrs)</span>'; else: echo '—'; endif; ?></td></tr>
                             <tr><th>Gender</th><td><?php echo ucfirst($patient['gender'] ?? '—'); ?></td></tr>
                             <tr><th>Civil Status</th><td><?php echo ucfirst($patient['civil_status'] ?? '—'); ?></td></tr>
                             <tr><th>Blood Type</th><td><?php echo e($patient['blood_type'] ?? '—'); ?></td></tr>
