@@ -393,7 +393,7 @@ $collection_rate = $totals['total_due'] > 0
                             <?php endif; ?>
                         </td>
                         <td data-label="Patient">
-                            <div style="font-weight:600;font-size:0.85rem;"><?php echo e(ucwords(strtolower($b['patient_name']))); ?></div>
+                            <a href="<?php echo BASE_URL; ?>modules/patients/view.php?id=<?php echo $b['patient_id']; ?>" style="font-weight:600;font-size:0.85rem;color:var(--gray-900);text-decoration:none;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--gray-900)'"><?php echo e(ucwords(strtolower($b['patient_name']))); ?></a>
                             <div style="font-size:0.72rem;color:var(--gray-400);"><?php echo e($b['patient_code']); ?></div>
                         </td>
                         <td data-label="Service" style="font-size:0.82rem;color:var(--gray-600);"><?php echo e($b['service_name'] ?? '—'); ?></td>
