@@ -232,7 +232,7 @@ $appointments = $conn->query("
                         </td>
                         <!-- Patient -->
                         <td data-label="Patient" style="padding:13px 16px;">
-                            <div style="font-size:0.85rem;font-weight:700;color:var(--gray-900);"><?php echo htmlspecialchars(ucwords(strtolower($a['patient_name']))); ?></div>
+                            <a href="<?php echo BASE_URL; ?>modules/patients/view.php?id=<?php echo $a['patient_id']; ?>" style="font-size:0.85rem;font-weight:700;color:var(--gray-900);text-decoration:none;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--gray-900)'"><?php echo htmlspecialchars(ucwords(strtolower($a['patient_name']))); ?></a>
                         </td>
                         <!-- Service -->
                         <td data-label="Service" style="padding:13px 16px;">
