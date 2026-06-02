@@ -29,6 +29,11 @@ if (!empty($_SERVER['HTTP_HOST'])) {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https'
         : ((!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http');
     $host    = $_SERVER['HTTP_HOST']; // includes :port if non-standard
+    // Sanitise HTTP_HOST to prevent Host Header Injection — only allow safe hostname chars
+    // and an optional port number. Fall back to .env value if the header looks malicious.
+    if (!preg_match('/^[a-zA-Z0-9.\-]+(:\d+)?$/', $host)) {
+        $host = parse_url($_ENV['BASE_URL'] ?? 'http://localhost/cap/', PHP_URL_HOST) ?: 'localhost';
+    }
     $script  = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '/index.php');
     // Find the app root by stripping known sub-directory segments
     $knownSubs = ['/modules/', '/includes/', '/assets/', '/api/', '/database/', '/logs/'];
@@ -49,26 +54,30 @@ define('SESSION_LIFETIME', 28800); // 8 hours
 
 date_default_timezone_set('Asia/Manila');
 
-// Hide PHP errors from visitors in production; show them in debug mode
-$_debug = ($_ENV['APP_DEBUG'] ?? 'false') === 'true';
-ini_set('display_errors',         $_debug ? 1 : 0);
-ini_set('display_startup_errors', $_debug ? 1 : 0);
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../logs/error.log');
-error_reporting(E_ALL);
-unset($_debug);
-
+// Create logs directory before pointing error_log at it —
+// otherwise the very first error_log() call would silently fail.
 if (!is_dir(__DIR__ . '/../logs')) {
     mkdir(__DIR__ . '/../logs', 0755, true);
 }
 
+// Hide PHP errors from visitors in production; show them in debug mode
+ini_set('display_errors',         APP_DEBUG ? 1 : 0);
+ini_set('display_startup_errors', APP_DEBUG ? 1 : 0);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/../logs/error.log');
+error_reporting(E_ALL);
+
 // Catch any unhandled exception — show friendly error page, never a stack trace
 set_exception_handler(function ($e) {
     error_log('[EXCEPTION] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-    if (!headers_sent()) http_response_code(500);
     $isApi = str_contains($_SERVER['REQUEST_URI'] ?? '', '/api/');
+    if (!headers_sent()) {
+        http_response_code(500);
+        if ($isApi) {
+            header('Content-Type: application/json');
+        }
+    }
     if ($isApi) {
-        header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'A server error occurred.']);
     } else {
         if (defined('APP_DEBUG') && APP_DEBUG) {
