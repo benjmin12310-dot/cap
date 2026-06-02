@@ -15,8 +15,10 @@ $action = $body['action'] ?? ($_GET['action'] ?? '');
 if ($action === 'mark_read') {
     $id = intval($body['id'] ?? 0);
     if ($id) {
-        $stmt = $conn->prepare("UPDATE notifications SET is_read = 1 WHERE id = ?");
-        $stmt->bind_param('i', $id);
+        // Scope update to the current user's own notifications (or broadcast ones).
+        // Without this, any logged-in user could mark any other user's notification as read.
+        $stmt = $conn->prepare("UPDATE notifications SET is_read = 1 WHERE id = ? AND (user_id = ? OR user_id IS NULL)");
+        $stmt->bind_param('ii', $id, $current_user_id);
         $stmt->execute();
         $stmt->close();
         // Bust the session cache so the next page load reflects the updated count
@@ -25,7 +27,7 @@ if ($action === 'mark_read') {
         echo json_encode(['status' => 'success']);
     } else {
         http_response_code(422);
-echo json_encode(['status' => 'error', 'message' => 'Invalid ID']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid ID']);
     }
     exit();
 }
@@ -47,7 +49,11 @@ if ($action === 'mark_all_read') {
 if ($action === 'get_count') {
     $stmt = $conn->prepare("SELECT COUNT(*) as c FROM notifications WHERE (user_id = ? OR user_id IS NULL) AND is_read = 0");
     $stmt->bind_param('i', $current_user_id);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Query failed.']);
+        exit();
+    }
     $count = (int)$stmt->get_result()->fetch_assoc()['c'];
     $stmt->close();
     echo json_encode(['status' => 'success', 'count' => $count]);
