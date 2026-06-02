@@ -24,6 +24,14 @@ if ($action === 'get_slots') {
         exit();
     }
 
+    // Reject anything that isn't a valid Y-m-d date — strtotime('garbage') silently
+    // returns false and date('l', false) falls back to the Unix epoch (Thursday).
+    $parsed_date = DateTime::createFromFormat('Y-m-d', $date);
+    if (!$parsed_date || $parsed_date->format('Y-m-d') !== $date) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid date format. Expected YYYY-MM-DD.']);
+        exit();
+    }
+
     $day = strtolower(date('l', strtotime($date)));
     $day_code = strtolower(substr($day, 0, 3)); // mon, tue, etc.
 
@@ -83,33 +91,41 @@ if ($action === 'get_slots') {
     $slots    = [];
     $start    = strtotime($open_time);
     $end      = strtotime($close_time);
-    $step     = $sched['slot_duration_minutes'] * 60;
     $slot_dur = intval($sched['slot_duration_minutes']);
+
+    // Guard: a zero-duration slot would cause an infinite loop in the for() below.
+    if ($slot_dur <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid clinic schedule: slot duration must be greater than zero.']);
+        exit();
+    }
+
+    $step = $slot_dur * 60;
 
     // Fetch booked windows.
     // If doctor_id is given → only that doctor's bookings block slots.
     // If no doctor selected → any booking blocks the slot (old clinic-wide behaviour).
+    // $slot_dur is bound as a parameter instead of interpolated into the SQL string.
     if ($doctor_id > 0) {
         $br_stmt = $conn->prepare("
             SELECT a.appointment_time,
-                   COALESCE(s.duration_minutes, $slot_dur) AS duration_minutes
+                   COALESCE(s.duration_minutes, ?) AS duration_minutes
             FROM   appointments a
             LEFT JOIN services s ON s.id = a.service_id
             WHERE  a.appointment_date = ?
             AND    a.doctor_id = ?
             AND    a.status NOT IN ('cancelled', 'no-show')
         ");
-        $br_stmt->bind_param('si', $date, $doctor_id);
+        $br_stmt->bind_param('isi', $slot_dur, $date, $doctor_id);
     } else {
         $br_stmt = $conn->prepare("
             SELECT a.appointment_time,
-                   COALESCE(s.duration_minutes, $slot_dur) AS duration_minutes
+                   COALESCE(s.duration_minutes, ?) AS duration_minutes
             FROM   appointments a
             LEFT JOIN services s ON s.id = a.service_id
             WHERE  a.appointment_date = ?
             AND    a.status NOT IN ('cancelled', 'no-show')
         ");
-        $br_stmt->bind_param('s', $date);
+        $br_stmt->bind_param('is', $slot_dur, $date);
     }
     $br_stmt->execute();
     $booked_result = $br_stmt->get_result();
@@ -205,13 +221,17 @@ if ($action === 'update_status') {
         log_action($conn, $current_user_id, $current_user_name, 'Updated Appointment Status', 'appointments', $id, "Status changed to: $status");
 
         // ── Notification trigger ──────────────────────────────────
-        $appt = $conn->query("
+        $appt_stmt = $conn->prepare("
             SELECT a.appointment_code, a.appointment_date,
                    CONCAT(p.first_name,' ',p.last_name) as patient_name
             FROM appointments a
             LEFT JOIN patients p ON a.patient_id = p.id
-            WHERE a.id = $id LIMIT 1
-        ")->fetch_assoc();
+            WHERE a.id = ? LIMIT 1
+        ");
+        $appt_stmt->bind_param('i', $id);
+        $appt_stmt->execute();
+        $appt = $appt_stmt->get_result()->fetch_assoc();
+        $appt_stmt->close();
         if ($appt) {
             $pname = $appt['patient_name'];
             $code  = $appt['appointment_code'];
@@ -231,7 +251,7 @@ if ($action === 'update_status') {
         echo json_encode(['status' => 'success']);
     } else {
         http_response_code(500);
-echo json_encode(['status' => 'error', 'message' => 'Update failed.']);
+        echo json_encode(['status' => 'error', 'message' => 'Update failed.']);
     }
     $stmt->close();
     exit();
@@ -243,7 +263,7 @@ if ($action === 'delete_appointment') {
 
     if (!$id) {
         http_response_code(422);
-echo json_encode(['status' => 'error', 'message' => 'Invalid appointment ID.']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid appointment ID.']);
         exit();
     }
 
@@ -251,13 +271,18 @@ echo json_encode(['status' => 'error', 'message' => 'Invalid appointment ID.']);
     $appt = $conn->query("SELECT appointment_code FROM appointments WHERE id = $id LIMIT 1")->fetch_assoc();
     if (!$appt) {
         http_response_code(404);
-echo json_encode(['status' => 'error', 'message' => 'Appointment not found.']);
+        echo json_encode(['status' => 'error', 'message' => 'Appointment not found.']);
         exit();
     }
 
-    // Delete related payments first then appointment
-    // DATABASE SECURITY: $id is intval() above — safe positive integer
-    $conn->query("DELETE FROM bills    WHERE appointment_id = $id");
+    // Delete related payments first, then the appointment.
+    // Both deletes use intval()-sanitised $id — safe positive integer.
+    $bills_del = $conn->query("DELETE FROM bills WHERE appointment_id = $id");
+    if (!$bills_del) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to delete related bills.']);
+        exit();
+    }
     $del = $conn->query("DELETE FROM appointments WHERE id = $id");
 
     if ($del) {
@@ -265,7 +290,7 @@ echo json_encode(['status' => 'error', 'message' => 'Appointment not found.']);
         echo json_encode(['status' => 'success']);
     } else {
         http_response_code(500);
-echo json_encode(['status' => 'error', 'message' => 'Delete failed.']);
+        echo json_encode(['status' => 'error', 'message' => 'Delete failed.']);
     }
     exit();
 }
