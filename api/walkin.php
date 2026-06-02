@@ -12,14 +12,22 @@ $day   = strtolower(date('l'));
 $now   = time();
 
 // Check blocked date
-$blocked = $conn->query("SELECT id FROM blocked_dates WHERE blocked_date = '$today'")->num_rows;
+$bl_stmt = $conn->prepare("SELECT id FROM blocked_dates WHERE blocked_date = ? LIMIT 1");
+$bl_stmt->bind_param('s', $today);
+$bl_stmt->execute();
+$blocked = $bl_stmt->get_result()->num_rows;
+$bl_stmt->close();
 if ($blocked > 0) {
     echo json_encode(['is_closed' => true, 'reason' => 'Today is a blocked date (holiday or clinic closed).', 'slot' => null, 'label' => null]);
     exit();
 }
 
 // Get schedule
-$sched = $conn->query("SELECT * FROM schedules WHERE day_of_week = '$day' AND is_open = 1 LIMIT 1")->fetch_assoc();
+$sc_stmt = $conn->prepare("SELECT * FROM schedules WHERE day_of_week = ? AND is_open = 1 LIMIT 1");
+$sc_stmt->bind_param('s', $day);
+$sc_stmt->execute();
+$sched = $sc_stmt->get_result()->fetch_assoc();
+$sc_stmt->close();
 if (!$sched) {
     echo json_encode(['is_closed' => true, 'reason' => 'No schedule configured for ' . ucfirst($day) . '.', 'slot' => null, 'label' => null]);
     exit();
@@ -27,21 +35,32 @@ if (!$sched) {
 
 $open_ts  = strtotime($today . ' ' . $sched['open_time']);
 $close_ts = strtotime($today . ' ' . $sched['close_time']);
-$step     = intval($sched['slot_duration_minutes'] ?? 30) * 60;
+$slot_dur = intval($sched['slot_duration_minutes']);
+$step     = $slot_dur * 60;
 
-$booked_res = $conn->query("
+// Guard: a zero-duration slot would cause an infinite loop below
+if ($step <= 0) {
+    echo json_encode(['is_closed' => true, 'reason' => 'Invalid clinic schedule: slot duration must be greater than zero.', 'slot' => null, 'label' => null]);
+    exit();
+}
+
+$br_stmt = $conn->prepare("
     SELECT a.appointment_time,
-           COALESCE(s.duration_minutes, " . intval($sched['slot_duration_minutes']) . ") AS duration_minutes
+           COALESCE(s.duration_minutes, ?) AS duration_minutes
     FROM appointments a
     LEFT JOIN services s ON s.id = a.service_id
-    WHERE a.appointment_date = '$today'
+    WHERE a.appointment_date = ?
     AND a.status NOT IN ('cancelled','no-show')
 ");
+$br_stmt->bind_param('is', $slot_dur, $today);
+$br_stmt->execute();
+$booked_res = $br_stmt->get_result();
 $booked_windows = [];
 while ($row = $booked_res->fetch_assoc()) {
     $start = strtotime($today . ' ' . $row['appointment_time']);
     $booked_windows[] = ['start' => $start, 'end' => $start + intval($row['duration_minutes']) * 60];
 }
+$br_stmt->close();
 
 $next_slot = null; $next_label = null;
 for ($t = $open_ts; $t < $close_ts; $t += $step) {
