@@ -10,7 +10,7 @@ header('Content-Type: application/json');
 
 $action = $_GET['action'] ?? '';
 
-// Get completed appointments for a patient (for billing dropdown)
+// Get appointments for a patient to link to a bill (pending/confirmed/completed are all billable)
 if ($action === 'get_appointments') {
     $patient_id = intval($_GET['patient_id'] ?? 0);
     if (!$patient_id) {
@@ -28,9 +28,19 @@ if ($action === 'get_appointments') {
         LIMIT 20
     ");
     $stmt->bind_param('i', $patient_id);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Query failed.']);
+        exit();
+    }
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
+
+    // Cast price to float — MySQLi returns DECIMAL columns as strings
+    foreach ($rows as &$row) {
+        $row['price'] = $row['price'] !== null ? floatval($row['price']) : null;
+    }
+    unset($row);
 
     echo json_encode(['appointments' => $rows]);
     exit();
