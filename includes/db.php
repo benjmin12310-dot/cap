@@ -70,6 +70,31 @@ $conn->set_charset('utf8mb4');
 
 // --- Helper functions ---------------------------------------------------------
 
+// Return the real client IP, accounting for reverse proxies (Railway, Cloudflare, etc.).
+// X-Forwarded-For can be spoofed by clients, so we only trust it when REMOTE_ADDR is
+// a known private/loopback range (i.e. the request actually came through a proxy).
+function get_client_ip(): string {
+    $remote = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $xff    = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+
+    // Only trust XFF when the connection came from a private/loopback address (a proxy).
+    $is_proxy = (
+        $remote === '127.0.0.1' ||
+        str_starts_with($remote, '10.')    ||
+        str_starts_with($remote, '172.')   ||
+        str_starts_with($remote, '192.168.')
+    );
+
+    if ($is_proxy && !empty($xff)) {
+        // XFF may contain a comma-separated chain — the leftmost is the original client.
+        $ip = trim(explode(',', $xff)[0]);
+        // Basic sanity check — must look like an IP address
+        if (filter_var($ip, FILTER_VALIDATE_IP)) return $ip;
+    }
+
+    return $remote;
+}
+
 // Cast a GET/POST value to a safe positive integer (use for all ID inputs)
 function secure_int($value) {
     $v = intval($value);
@@ -103,7 +128,7 @@ function valid_phone($phone) {
 
 // Write an entry to the audit_logs table (who did what, on which record, from which IP)
 function log_action($conn, $user_id, $user_name, $action, $module, $record_id = null, $details = '') {
-    $ip   = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $ip   = get_client_ip();
     $stmt = $conn->prepare(
         "INSERT INTO audit_logs (user_id, user_name, action, module, record_id, details, ip_address)
          VALUES (?, ?, ?, ?, ?, ?, ?)"
@@ -140,7 +165,7 @@ function validate_csrf(): void {
     $submitted = $_POST['_csrf'] ?? '';
     $expected  = $_SESSION['csrf_token'] ?? '';
     if (empty($submitted) || empty($expected) || !hash_equals($expected, $submitted)) {
-        error_log('[CSRF] Token mismatch from IP: ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+        error_log('[CSRF] Token mismatch from IP: ' . get_client_ip());
         $isApi = str_contains($_SERVER['REQUEST_URI'] ?? '', '/api/');
         if ($isApi) {
             http_response_code(403);
@@ -275,7 +300,8 @@ function make_code(string $prefix, int $id): string {
     return $prefix . '-' . str_pad($id, 4, '0', STR_PAD_LEFT);
 }
 
-// Legacy wrapper — kept for backward compatibility. Safe because $id is intval().
+// Legacy wrapper — kept for backward compatibility.
+// $table must always be a hardcoded string literal — never pass user input here.
 function generate_code($conn, $table, $prefix) {
     $res = $conn->query("SELECT MAX(id) as max_id FROM `$table`");
     $row = $res ? $res->fetch_assoc() : null;
@@ -287,14 +313,17 @@ function generate_code($conn, $table, $prefix) {
 // SECURITY #2 — API RATE LIMITING
 // ============================================================
 function api_rate_limit($conn, string $endpoint, int $max_hits = 60, int $window_sec = 60): void {
-    $ip  = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $ip  = get_client_ip();
     $now = date('Y-m-d H:i:s');
 
     $stmt = $conn->prepare(
         "SELECT id, hits, window_start FROM rate_limits WHERE ip_address = ? AND endpoint = ? LIMIT 1"
     );
     $stmt->bind_param('ss', $ip, $endpoint);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        $stmt->close();
+        return; // If rate-limit DB is down, fail open rather than blocking all requests
+    }
     $row = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
