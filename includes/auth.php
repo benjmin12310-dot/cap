@@ -27,18 +27,23 @@ if (isset($_SESSION['last_activity'])) {
         session_unset();
         session_destroy();
         $base = defined('BASE_URL') ? BASE_URL : 'http://localhost/cap/';
+        header('Cache-Control: no-store, no-cache, must-revalidate');
         header('Location: ' . $base . 'index.php?timeout=1');
         exit();
     }
 }
-$_SESSION['last_activity'] = time();
 
 // ── Step 5: Authentication check ──────────────────────────────────────────
 if (empty($_SESSION['user_id'])) {
     $base = defined('BASE_URL') ? BASE_URL : 'http://localhost/cap/';
+    header('Cache-Control: no-store, no-cache, must-revalidate');
     header('Location: ' . $base . 'index.php');
     exit();
 }
+
+// Stamp last_activity only after auth is confirmed — prevents unauthenticated
+// sessions from self-renewing by refreshing the timestamp on every request.
+$_SESSION['last_activity'] = time();
 
 // ── Step 6: Expose session data ───────────────────────────────────────────
 $current_user_id   = (int) $_SESSION['user_id'];
@@ -67,6 +72,7 @@ function is_admin(): bool {
 function require_admin(): void {
     if (!is_admin()) {
         $base = defined('BASE_URL') ? BASE_URL : 'http://localhost/cap/';
+        header('Cache-Control: no-store, no-cache, must-revalidate');
         header('Location: ' . $base . 'dashboard.php');
         exit();
     }
