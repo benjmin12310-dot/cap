@@ -15,7 +15,7 @@ if ($action === 'get_appointments') {
     $patient_id = intval($_GET['patient_id'] ?? 0);
     if (!$patient_id) {
         http_response_code(422);
-echo json_encode(['status' => 'error', 'message' => 'Invalid patient ID']);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid patient ID']);
         exit();
     }
 
@@ -31,25 +31,40 @@ echo json_encode(['status' => 'error', 'message' => 'Invalid patient ID']);
         LIMIT 20
     ");
     $stmt->bind_param('i', $patient_id);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Query failed.']);
+        exit();
+    }
     $appointments = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
     // Load tooth conditions for color coding
     $tooth_conditions = [];
-    $tc = $conn->query("
+    $tc_stmt = $conn->prepare("
         SELECT tooth_number, tooth_status FROM dental_records
-        WHERE patient_id = $patient_id
+        WHERE patient_id = ?
         AND tooth_number != '' AND tooth_number IS NOT NULL
         ORDER BY visit_date DESC
     ");
-    while ($tr = $tc->fetch_assoc()) {
-        foreach (array_map('trim', explode(',', $tr['tooth_number'])) as $t) {
-            if ($t && !isset($tooth_conditions[$t])) {
-                $tooth_conditions[$t] = $tr['tooth_status'];
+    $tc_stmt->bind_param('i', $patient_id);
+    if ($tc_stmt->execute()) {
+        $tc_result = $tc_stmt->get_result();
+        while ($tr = $tc_result->fetch_assoc()) {
+            foreach (array_map('trim', explode(',', $tr['tooth_number'])) as $t) {
+                if ($t && !isset($tooth_conditions[$t])) {
+                    $tooth_conditions[$t] = $tr['tooth_status'];
+                }
             }
         }
     }
+    $tc_stmt->close();
+
+    // Cast price to float — MySQLi returns DECIMAL columns as strings
+    foreach ($appointments as &$appt) {
+        $appt['price'] = $appt['price'] !== null ? floatval($appt['price']) : null;
+    }
+    unset($appt);
 
     echo json_encode(['status' => 'success', 'appointments' => $appointments, 'tooth_conditions' => $tooth_conditions]);
     exit();
