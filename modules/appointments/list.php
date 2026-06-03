@@ -12,6 +12,16 @@ $walkin_services = $conn->query("SELECT id, service_name, price FROM services WH
 
 // Auto-open walk-in drawer if ?walkin=1 is in the URL
 $auto_open_walkin = isset($_GET['walkin']) && $_GET['walkin'] === '1';
+// Pre-select a patient when coming from Patient Profile → Book
+$prefill_patient_id = isset($_GET['patient_id']) ? intval($_GET['patient_id']) : 0;
+$prefill_patient = null;
+if ($prefill_patient_id > 0) {
+    $pp = $conn->prepare("SELECT id, CONCAT(first_name,' ',last_name) as full_name, patient_code, phone FROM patients WHERE id = ? AND is_active = 1 LIMIT 1");
+    $pp->bind_param('i', $prefill_patient_id);
+    $pp->execute();
+    $prefill_patient = $pp->get_result()->fetch_assoc();
+    $pp->close();
+}
 
 $status_filter = $_GET['status'] ?? '';
 $date_filter   = $_GET['date'] ?? '';
@@ -1025,7 +1035,18 @@ function submitWalkin() {
 }
 
 <?php if ($auto_open_walkin): ?>
-document.addEventListener('DOMContentLoaded', function() { openWalkinDrawer(); });
+document.addEventListener('DOMContentLoaded', function() {
+    openWalkinDrawer();
+    <?php if ($prefill_patient): ?>
+    // Pre-select the patient we came from
+    selectPatient(
+        <?php echo (int)$prefill_patient['id']; ?>,
+        <?php echo json_encode($prefill_patient['full_name']); ?>,
+        <?php echo json_encode($prefill_patient['patient_code']); ?>,
+        <?php echo json_encode($prefill_patient['phone'] ?? ''); ?>
+    );
+    <?php endif; ?>
+});
 <?php endif; ?>
 
 // ── Resizable Drawer ──────────────────────────────────────────────────────
