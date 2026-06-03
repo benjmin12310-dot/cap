@@ -14,6 +14,21 @@ $action = $_GET['action'] ?? ($_POST['action'] ?? '');
 $body = json_decode(file_get_contents('php://input'), true) ?? [];
 if (!empty($body)) $action = $body['action'] ?? $action;
 
+// CSRF protection for all state-mutating actions.
+// The JS caller must include _csrf (from csrf_field()) in the JSON body or POST data.
+// Read-only actions (get_slots) are exempt.
+$mutating_actions = ['update_status', 'delete_appointment'];
+if (in_array($action, $mutating_actions)) {
+    $submitted = $body['_csrf'] ?? ($_POST['_csrf'] ?? '');
+    $expected  = $_SESSION['csrf_token'] ?? '';
+    if (empty($submitted) || empty($expected) || !hash_equals($expected, $submitted)) {
+        error_log('[CSRF] Token mismatch on api/appointments.php action=' . $action . ' from IP: ' . get_client_ip());
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid request token. Please refresh and try again.']);
+        exit();
+    }
+}
+
 // GET AVAILABLE TIME SLOTS FOR A DATE (optionally filtered by doctor)
 if ($action === 'get_slots') {
     $date      = $_GET['date']      ?? '';
