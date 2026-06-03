@@ -27,25 +27,50 @@ if (!in_array($status_filter, $allowed_statuses)) $status_filter = '';
 // Validate date format (YYYY-MM-DD) — reject anything that doesn't match
 if ($date_filter && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_filter)) $date_filter = '';
 
-// Build WHERE using only whitelisted/validated values — safe to interpolate
-$where = "WHERE 1=1";
-if ($status_filter) $where .= " AND a.status = '" . $conn->real_escape_string($status_filter) . "'";
-if ($date_filter)   $where .= " AND a.appointment_date = '" . $conn->real_escape_string($date_filter) . "'";
-if ($doctor_filter) $where .= " AND a.doctor_id = " . intval($doctor_filter);
+// Build WHERE using prepared-statement parameters to prevent SQL injection.
+// Whitelisted/integer values are safe to interpolate; user-supplied strings use ? placeholders.
+$where       = "WHERE 1=1";
+$params      = [];
+$param_types = '';
+
+if ($status_filter) {
+    $where        .= " AND a.status = ?";
+    $params[]      = $status_filter;   // already whitelisted above
+    $param_types  .= 's';
+}
+if ($date_filter) {
+    $where        .= " AND a.appointment_date = ?";
+    $params[]      = $date_filter;     // already regex-validated above
+    $param_types  .= 's';
+}
+if ($doctor_filter) {
+    $where        .= " AND a.doctor_id = ?";
+    $params[]      = intval($doctor_filter);
+    $param_types  .= 'i';
+}
 if ($search) {
-    $s = $conn->real_escape_string(trim($search));
-    $where .= " AND (p.first_name LIKE '%$s%' OR p.last_name LIKE '%$s%'"
-            . " OR a.appointment_code LIKE '%$s%'"
-            . " OR CONCAT(p.first_name,' ',p.last_name) LIKE '%$s%')";
+    $like          = '%' . $search . '%';
+    $where        .= " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR a.appointment_code LIKE ? OR CONCAT(p.first_name,' ',p.last_name) LIKE ?)";
+    $params[]      = $like;
+    $params[]      = $like;
+    $params[]      = $like;
+    $params[]      = $like;
+    $param_types  .= 'ssss';
 }
 
 $per_page    = 20;
 $page        = max(1, intval($_GET['page'] ?? 1));
-$total_count = (int)$conn->query("
-    SELECT COUNT(*) as c FROM appointments a
-    LEFT JOIN patients p ON a.patient_id = p.id
-    $where
-")->fetch_assoc()['c'];
+
+// COUNT query
+$count_sql  = "SELECT COUNT(*) as c FROM appointments a LEFT JOIN patients p ON a.patient_id = p.id $where";
+$count_stmt = $conn->prepare($count_sql);
+if ($params) {
+    $count_stmt->bind_param($param_types, ...$params);
+}
+$count_stmt->execute();
+$total_count = (int)$count_stmt->get_result()->fetch_assoc()['c'];
+$count_stmt->close();
+
 $total_pages = max(1, ceil($total_count / $per_page));
 $page        = min($page, $total_pages);
 $offset      = ($page - 1) * $per_page;
@@ -57,7 +82,8 @@ if ($doctor_filter) $filter_parts[] = 'doctor_id=' . $doctor_filter;
 if ($search)        $filter_parts[] = 'search=' . urlencode($search);
 $filter_qs = $filter_parts ? implode('&', $filter_parts) . '&' : '';
 
-$appointments = $conn->query("
+// Main list query
+$list_sql  = "
     SELECT a.*, CONCAT(p.first_name,' ',p.last_name) as patient_name,
            s.service_name, d.full_name as doctor_name, d.id as doctor_id,
            b.id as bill_id, b.status as bill_status
@@ -69,7 +95,14 @@ $appointments = $conn->query("
     $where
     ORDER BY a.appointment_date DESC, a.appointment_time ASC
     LIMIT $per_page OFFSET $offset
-")->fetch_all(MYSQLI_ASSOC);
+";
+$list_stmt = $conn->prepare($list_sql);
+if ($params) {
+    $list_stmt->bind_param($param_types, ...$params);
+}
+$list_stmt->execute();
+$appointments = $list_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$list_stmt->close();
 
 ?>
 <!DOCTYPE html>
