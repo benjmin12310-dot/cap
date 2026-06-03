@@ -64,6 +64,7 @@ $status_map = [
     'denture'   => ['label' => 'Denture',               'bg' => 'var(--gray-100)',    'color' => 'var(--gray-500)', 'border' => 'var(--gray-300)'],
 ];
 $ts  = $r['tooth_status'] ?? 'normal';
+$ts_info = $status_map[$ts] ?? $status_map['normal'];
 $tsc = $status_map[$ts] ?? $status_map['normal'];
 ?>
 <!DOCTYPE html>
@@ -143,6 +144,11 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                 <a href="list.php" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Records
                 </a>
+                <a href="../print/dental_certificate.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-file-earmark-medical"></i> Certificate
+                </a>
+                <a href="../print/prescription.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-capsule"></i> RX
                 </a>
             </div>
         </div>
@@ -223,7 +229,7 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                                 <?php foreach($upper as $tn):
                                     $sel = in_array((string)$tn, $selected_teeth);
                                 ?>
-                                <div title="Tooth <?php echo $tn; ?>" style="width:30px;height:30px;border-radius:6px 6px 12px 12px;background:<?php echo $sel ? 'var(--blue-500)' : 'var(--gray-200)'; ?>;border:1px solid <?php echo $sel ? 'var(--blue-600)' : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:<?php echo $sel ? '#fff' : 'var(--gray-600)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $tn; ?></div>
+                                <div title="Tooth <?php echo $tn; ?>" style="width:30px;height:30px;border-radius:6px 6px 12px 12px;background:<?php echo $sel ? $ts_info['bg'] : 'var(--gray-200)'; ?>;border:1px solid <?php echo $sel ? $ts_info['border'] : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:<?php echo $sel ? $ts_info['color'] : 'var(--gray-600)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $tn; ?></div>
                                 <?php endforeach; ?>
                             </div>
                             <!-- Primary upper -->
@@ -231,7 +237,7 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                                 <?php foreach($primary_upper as $pt):
                                     $sel = in_array($pt, $selected_teeth);
                                 ?>
-                                <div title="Primary <?php echo $pt; ?>" style="width:26px;height:26px;border-radius:50%;background:<?php echo $sel ? 'var(--blue-400)' : 'var(--gray-100)'; ?>;border:1px solid <?php echo $sel ? 'var(--blue-500)' : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:<?php echo $sel ? '#fff' : 'var(--gray-500)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $pt; ?></div>
+                                <div title="Primary <?php echo $pt; ?>" style="width:26px;height:26px;border-radius:50%;background:<?php echo $sel ? $ts_info['bg'] : 'var(--gray-100)'; ?>;border:1px solid <?php echo $sel ? $ts_info['border'] : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:<?php echo $sel ? $ts_info['color'] : 'var(--gray-500)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $pt; ?></div>
                                 <?php endforeach; ?>
                             </div>
                             <!-- Divider line -->
@@ -241,7 +247,7 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                                 <?php foreach($primary_lower as $pt):
                                     $sel = in_array($pt, $selected_teeth);
                                 ?>
-                                <div title="Primary <?php echo $pt; ?>" style="width:26px;height:26px;border-radius:50%;background:<?php echo $sel ? 'var(--blue-400)' : 'var(--gray-100)'; ?>;border:1px solid <?php echo $sel ? 'var(--blue-500)' : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:<?php echo $sel ? '#fff' : 'var(--gray-500)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $pt; ?></div>
+                                <div title="Primary <?php echo $pt; ?>" style="width:26px;height:26px;border-radius:50%;background:<?php echo $sel ? $ts_info['bg'] : 'var(--gray-100)'; ?>;border:1px solid <?php echo $sel ? $ts_info['border'] : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:<?php echo $sel ? $ts_info['color'] : 'var(--gray-500)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $pt; ?></div>
                                 <?php endforeach; ?>
                             </div>
                             <!-- Lower permanent -->
@@ -249,12 +255,12 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                                 <?php foreach($lower as $tn):
                                     $sel = in_array((string)$tn, $selected_teeth);
                                 ?>
-                                <div title="Tooth <?php echo $tn; ?>" style="width:30px;height:30px;border-radius:12px 12px 6px 6px;background:<?php echo $sel ? 'var(--blue-500)' : 'var(--gray-200)'; ?>;border:1px solid <?php echo $sel ? 'var(--blue-600)' : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:<?php echo $sel ? '#fff' : 'var(--gray-600)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $tn; ?></div>
+                                <div title="Tooth <?php echo $tn; ?>" style="width:30px;height:30px;border-radius:12px 12px 6px 6px;background:<?php echo $sel ? $ts_info['bg'] : 'var(--gray-200)'; ?>;border:1px solid <?php echo $sel ? $ts_info['border'] : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:<?php echo $sel ? $ts_info['color'] : 'var(--gray-600)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $tn; ?></div>
                                 <?php endforeach; ?>
                             </div>
                             <!-- Legend -->
                             <div style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:0.65rem;color:var(--gray-400);">
-                                <span><span style="display:inline-block;width:8px;height:8px;background:var(--blue-500);border-radius:2px;margin-right:3px;"></span>Affected</span>
+                                <span><span style="display:inline-block;width:8px;height:8px;background:<?php echo $ts_info['bg']; ?>;border:1px solid <?php echo $ts_info['border']; ?>;border-radius:2px;margin-right:3px;"></span><?php echo htmlspecialchars($ts_info['label']); ?></span>
                                 <span><span style="display:inline-block;width:8px;height:8px;background:var(--gray-200);border-radius:2px;margin-right:3px;"></span>Normal</span>
                                 <span><span style="display:inline-block;width:8px;height:8px;background:var(--gray-100);border-radius:50%;margin-right:3px;border:1px solid var(--gray-300);"></span>Primary</span>
                             </div>
