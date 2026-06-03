@@ -495,13 +495,19 @@ function updateStatus(id, btn) {
     statusModal.show();
 }
 
+// Read the CSRF token once from the hidden form field rendered by csrf_field()
+function getCsrfToken() {
+    var el = document.querySelector('input[name="_csrf"]');
+    return el ? el.value : '';
+}
+
 function saveStatus() {
     var id     = document.getElementById('appt_id').value;
     var status = document.getElementById('new_status').value;
     fetch('<?php echo BASE_URL; ?>api/appointments.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update_status', id: id, status: status })
+        body: JSON.stringify({ action: 'update_status', id: id, status: status, _csrf: getCsrfToken() })
     })
     .then(res => res.json())
     .then(data => {
@@ -535,7 +541,7 @@ function completeAnyway() {
     fetch('<?php echo BASE_URL; ?>api/appointments.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update_status', id: pendingCompleteId, status: 'completed', force: true })
+        body: JSON.stringify({ action: 'update_status', id: pendingCompleteId, status: 'completed', force: true, _csrf: getCsrfToken() })
     })
     .then(res => res.json())
     .then(data => {
@@ -555,7 +561,7 @@ function doDeleteAppt() {
     fetch('<?php echo BASE_URL; ?>api/appointments.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete_appointment', id: deleteApptId })
+        body: JSON.stringify({ action: 'delete_appointment', id: deleteApptId, _csrf: getCsrfToken() })
     })
     .then(res => res.json())
     .then(data => {
@@ -580,7 +586,7 @@ function doConfirmAppt() {
     fetch('<?php echo BASE_URL; ?>api/appointments.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update_status', id: pendingConfirmId, status: 'confirmed' })
+        body: JSON.stringify({ action: 'update_status', id: pendingConfirmId, status: 'confirmed', _csrf: getCsrfToken() })
     })
     .then(res => res.json())
     .then(data => {
