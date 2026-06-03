@@ -61,14 +61,56 @@ $search   = trim($_GET['search'] ?? '');
 $per_page = 20;
 $page     = max(1, intval($_GET['page'] ?? 1));
 
-$where = "WHERE p.is_active = 0";
+// Build query using prepared statements to prevent SQL injection.
+$params      = [];
+$param_types = '';
+
+$base_where = "WHERE p.is_active = 0";
 if ($search) {
-    $s = $conn->real_escape_string($search);
-    $where .= " AND (p.first_name LIKE '%$s%' OR p.last_name LIKE '%$s%' OR p.patient_code LIKE '%$s%' OR p.phone LIKE '%$s%')";
+    $base_where .= " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.patient_code LIKE ? OR p.phone LIKE ?)";
+    $like = '%' . $search . '%';
+    $params      = [$like, $like, $like, $like];
+    $param_types = 'ssss';
 }
 
-$total_count = $conn->query("SELECT COUNT(*) as c FROM patients p $where")->fetch_assoc()['c'];
+// COUNT query
+$count_sql  = "SELECT COUNT(*) as c FROM patients p $base_where";
+$count_stmt = $conn->prepare($count_sql);
+if ($params) {
+    $count_stmt->bind_param($param_types, ...$params);
+}
+$count_stmt->execute();
+$total_count = (int)$count_stmt->get_result()->fetch_assoc()['c'];
+$count_stmt->close();
+
 $total_pages = max(1, ceil($total_count / $per_page));
+$page        = min($page, $total_pages);
+$offset      = ($page - 1) * $per_page;
+
+$filter_qs = $search ? 'search=' . urlencode($search) . '&' : '';
+
+// Main list query
+$list_sql  = "
+    SELECT p.*,
+           COUNT(DISTINCT a.id)  as total_appointments,
+           COUNT(DISTINCT b.id)  as total_bills,
+           COUNT(DISTINCT dr.id) as total_dental_records
+    FROM patients p
+    LEFT JOIN appointments   a  ON a.patient_id  = p.id
+    LEFT JOIN bills          b  ON b.patient_id  = p.id
+    LEFT JOIN dental_records dr ON dr.patient_id = p.id
+    $base_where
+    GROUP BY p.id
+    ORDER BY p.updated_at DESC
+    LIMIT $per_page OFFSET $offset
+";
+$list_stmt = $conn->prepare($list_sql);
+if ($params) {
+    $list_stmt->bind_param($param_types, ...$params);
+}
+$list_stmt->execute();
+$patients = $list_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$list_stmt->close();
 $page        = min($page, $total_pages);
 $offset      = ($page - 1) * $per_page;
 
