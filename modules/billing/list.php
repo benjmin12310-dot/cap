@@ -17,22 +17,49 @@ if (!in_array($status_filter, $allowed_statuses)) $status_filter = '';
 if ($date_from && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_from)) $date_from = '';
 if ($date_to   && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_to))   $date_to   = '';
 
-$where = "WHERE 1=1";
-if ($status_filter) $where .= " AND b.status = '" . $conn->real_escape_string($status_filter) . "'";
-if ($search) {
-    $s = $conn->real_escape_string($search);
-    $where .= " AND (p.first_name LIKE '%$s%' OR p.last_name LIKE '%$s%' OR b.bill_code LIKE '%$s%' OR p.patient_code LIKE '%$s%')";
+// Build WHERE using prepared-statement parameters to prevent SQL injection.
+$where       = "WHERE 1=1";
+$params      = [];
+$param_types = '';
+
+if ($status_filter) {
+    $where        .= " AND b.status = ?";
+    $params[]      = $status_filter;   // already whitelisted above
+    $param_types  .= 's';
 }
-if ($date_from) $where .= " AND DATE(b.created_at) >= '" . $conn->real_escape_string($date_from) . "'";
-if ($date_to)   $where .= " AND DATE(b.created_at) <= '" . $conn->real_escape_string($date_to) . "'";
+if ($search) {
+    $like          = '%' . $search . '%';
+    $where        .= " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR b.bill_code LIKE ? OR p.patient_code LIKE ?)";
+    $params[]      = $like;
+    $params[]      = $like;
+    $params[]      = $like;
+    $params[]      = $like;
+    $param_types  .= 'ssss';
+}
+if ($date_from) {
+    $where        .= " AND DATE(b.created_at) >= ?";
+    $params[]      = $date_from;   // already regex-validated above
+    $param_types  .= 's';
+}
+if ($date_to) {
+    $where        .= " AND DATE(b.created_at) <= ?";
+    $params[]      = $date_to;     // already regex-validated above
+    $param_types  .= 's';
+}
 
 $per_page    = 20;
 $page        = max(1, intval($_GET['page'] ?? 1));
-$total_count = (int)$conn->query("
-    SELECT COUNT(*) as c FROM bills b
-    LEFT JOIN patients p ON b.patient_id = p.id
-    $where
-")->fetch_assoc()['c'];
+
+// COUNT query
+$count_sql  = "SELECT COUNT(*) as c FROM bills b LEFT JOIN patients p ON b.patient_id = p.id $where";
+$count_stmt = $conn->prepare($count_sql);
+if ($params) {
+    $count_stmt->bind_param($param_types, ...$params);
+}
+$count_stmt->execute();
+$total_count = (int)$count_stmt->get_result()->fetch_assoc()['c'];
+$count_stmt->close();
+
 $total_pages = max(1, ceil($total_count / $per_page));
 $page        = min($page, $total_pages);
 $offset      = ($page - 1) * $per_page;
@@ -44,7 +71,8 @@ if ($date_from)     $filter_parts[] = 'date_from=' . urlencode($date_from);
 if ($date_to)       $filter_parts[] = 'date_to='   . urlencode($date_to);
 $filter_qs = $filter_parts ? implode('&', $filter_parts) . '&' : '';
 
-$bills = $conn->query("
+// Main list query
+$list_sql  = "
     SELECT b.*,
            CONCAT(p.first_name,' ',p.last_name) as patient_name,
            p.patient_code, p.phone,
@@ -57,7 +85,14 @@ $bills = $conn->query("
     $where
     ORDER BY b.created_at DESC
     LIMIT $per_page OFFSET $offset
-")->fetch_all(MYSQLI_ASSOC);
+";
+$list_stmt = $conn->prepare($list_sql);
+if ($params) {
+    $list_stmt->bind_param($param_types, ...$params);
+}
+$list_stmt->execute();
+$bills = $list_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$list_stmt->close();
 
 $totals = $conn->query("
     SELECT
