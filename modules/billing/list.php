@@ -371,11 +371,16 @@ $collection_rate = $totals['total_due'] > 0
                 <option value="partial" <?php echo $status_filter === 'partial' ? 'selected' : ''; ?>>Partial</option>
                 <option value="paid"    <?php echo $status_filter === 'paid'    ? 'selected' : ''; ?>>Paid</option>
             </select>
-            <input type="date" name="date_from" class="form-control form-control-sm" style="max-width:150px;"
-                value="<?php echo e($date_from); ?>">
-            <span style="color:var(--gray-300);font-size:0.8rem;">to</span>
-            <input type="date" name="date_to" class="form-control form-control-sm" style="max-width:150px;"
-                value="<?php echo e($date_to); ?>">
+            <div style="display:flex;flex-direction:column;gap:1px;">
+                <label style="font-size:0.68rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.04em;line-height:1;margin-bottom:2px;">From</label>
+                <input type="date" name="date_from" class="form-control form-control-sm" style="max-width:150px;"
+                    value="<?php echo e($date_from); ?>">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1px;">
+                <label style="font-size:0.68rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.04em;line-height:1;margin-bottom:2px;">To</label>
+                <input type="date" name="date_to" class="form-control form-control-sm" style="max-width:150px;"
+                    value="<?php echo e($date_to); ?>">
+            </div>
             <button type="submit" class="btn btn-sm btn-primary">Filter</button>
             <a href="list.php" class="btn btn-sm btn-outline-secondary">Clear</a>
         </form>
