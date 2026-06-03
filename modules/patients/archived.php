@@ -29,9 +29,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_id'])) {
     exit();
 }
 
-// ── Permanent delete (destructive — requires explicit checkbox consent) ──────
+// ── Permanent delete (destructive — admin only) ──────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['perma_delete_id'])) {
     validate_csrf();
+    require_admin(); // Only admins may permanently erase a patient and all their records
     $did = secure_int($_POST['perma_delete_id']);
     $confirmed = isset($_POST['perma_confirm']) && $_POST['perma_confirm'] === '1';
 
