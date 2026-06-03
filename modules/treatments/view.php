@@ -144,6 +144,11 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                 <a href="list.php" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Records
                 </a>
+                <a href="../print/dental_certificate.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-file-earmark-medical"></i> Certificate
+                </a>
+                <a href="../print/prescription.php?id=<?php echo $r['id']; ?>" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-capsule"></i> RX
                 </a>
             </div>
         </div>
@@ -212,52 +217,102 @@ $tsc = $status_map[$ts] ?? $status_map['normal'];
                             <?php endif; ?>
                         </div>
                         <?php
-                        $selected_teeth = array_map('trim', explode(',', $r['tooth_number'] ?? ''));
-                        $upper         = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
-                        $lower         = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
-                        $primary_upper = ['55','54','53','52','51','61','62','63','64','65'];
-                        $primary_lower = ['85','84','83','82','81','71','72','73','74','75'];
+                        // Parse selected teeth — filter empty/dash values
+                        $raw_teeth = array_map('trim', explode(',', $r['tooth_number'] ?? ''));
+                        $selected_teeth = array_filter($raw_teeth, fn($t) => $t !== '' && $t !== '—' && $t !== '-');
+
+                        // SVG tooth helpers (same as add.php)
+                        function vToothType(int $n): string {
+                            if (in_array($n, [18,17,16,28,27,26,38,37,36,48,47,46])) return 'molar';
+                            if (in_array($n, [15,14,25,24,35,34,45,44]))              return 'premolar';
+                            if (in_array($n, [13,23,33,43]))                          return 'canine';
+                            return 'incisor';
+                        }
+                        function vToothSVG(string $type, string $jaw, bool $sel, array $ti): string {
+                            $crown_fill   = $sel ? $ti['bg']     : '#E2E8F0';
+                            $crown_stroke = $sel ? $ti['border'] : '#94A3B8';
+                            $root_fill    = $sel ? $ti['bg']     : '#CBD5E1';
+                            $root_stroke  = $sel ? $ti['border'] : '#94A3B8';
+                            $num_fill     = $sel ? $ti['color']  : '#64748B';
+                            $s = "<style>.vt-crown-{$type}{$jaw}{fill:{$crown_fill};stroke:{$crown_stroke};stroke-width:0.8;}.vt-root-{$type}{$jaw}{fill:{$root_fill};stroke:{$root_stroke};stroke-width:0.8;}</style>";
+                            // Use inline styles for simplicity per tooth
+                            $c = "fill:{$crown_fill};stroke:{$crown_stroke};stroke-width:0.8;";
+                            $ro = "fill:{$root_fill};stroke:{$root_stroke};stroke-width:0.8;";
+                            if ($jaw === 'upper') {
+                                return match($type) {
+                                    'molar'   => "<rect x='-10' y='14' width='9'  height='26' rx='2.5' style='{$ro}'/><rect x='1' y='14' width='9' height='26' rx='2.5' style='{$ro}'/><rect x='-13' y='36' width='26' height='26' rx='4' style='{$c}'/>",
+                                    'premolar'=> "<rect x='-6.5' y='14' width='7' height='26' rx='2.5' style='{$ro}'/><rect x='1' y='14' width='7' height='26' rx='2.5' style='{$ro}'/><rect x='-11' y='36' width='22' height='26' rx='4' style='{$c}'/>",
+                                    'canine'  => "<rect x='-3.5' y='12' width='7' height='28' rx='2.5' style='{$ro}'/><path d='M-8,38 L8,38 L6.5,54 Q0,64 -6.5,54 Z' style='{$c}'/>",
+                                    default   => "<rect x='-3.5' y='14' width='7' height='26' rx='2.5' style='{$ro}'/><rect x='-9' y='38' width='18' height='24' rx='4' style='{$c}'/>",
+                                };
+                            } else {
+                                return match($type) {
+                                    'molar'   => "<rect x='-13' y='78' width='26' height='26' rx='4' style='{$c}'/><rect x='-10' y='102' width='9' height='26' rx='2.5' style='{$ro}'/><rect x='1' y='102' width='9' height='26' rx='2.5' style='{$ro}'/>",
+                                    'premolar'=> "<rect x='-11' y='78' width='22' height='26' rx='4' style='{$c}'/><rect x='-6.5' y='102' width='7' height='26' rx='2.5' style='{$ro}'/><rect x='1' y='102' width='7' height='26' rx='2.5' style='{$ro}'/>",
+                                    'canine'  => "<path d='M-8,100 L8,100 L6.5,84 Q0,76 -6.5,84 Z' style='{$c}'/><rect x='-3.5' y='100' width='7' height='28' rx='2.5' style='{$ro}'/>",
+                                    default   => "<rect x='-9' y='78' width='18' height='24' rx='4' style='{$c}'/><rect x='-3.5' y='100' width='7' height='26' rx='2.5' style='{$ro}'/>",
+                                };
+                            }
+                        }
+                        function vToothCX(int $i): int {
+                            if ($i < 8) return 30 + $i * 38;
+                            return 344 + ($i - 8) * 38;
+                        }
+                        $vUpper   = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+                        $vLower   = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+                        $vPrimU   = ['55','54','53','52','51','61','62','63','64','65'];
+                        $vPrimL   = ['85','84','83','82','81','71','72','73','74','75'];
+                        $numFill  = '#64748B';
                         ?>
                         <div class="tooth-chart-scroll" style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:14px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;">
-                            <!-- Upper permanent -->
-                            <div style="display:flex;justify-content:center;gap:3px;margin-bottom:3px;">
-                                <?php foreach($upper as $tn):
+                            <!-- SVG Odontogram — same layout as add.php -->
+                            <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                            <svg viewBox="0 0 640 148" width="640" height="148" style="display:block;margin:0 auto;max-width:100%;min-width:min(520px,100%);">
+                                <text x="320" y="10" text-anchor="middle" font-size="8" fill="#94A3B8" font-family="'Outfit',sans-serif" font-weight="700" letter-spacing="1.5">UPPER JAW</text>
+                                <?php foreach ($vUpper as $i => $tn):
                                     $sel = in_array((string)$tn, $selected_teeth);
                                 ?>
-                                <div title="Tooth <?php echo $tn; ?>" style="width:30px;height:30px;border-radius:6px 6px 12px 12px;background:<?php echo $sel ? $ts_info['bg'] : 'var(--gray-200)'; ?>;border:1px solid <?php echo $sel ? $ts_info['border'] : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:<?php echo $sel ? $ts_info['color'] : 'var(--gray-600)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $tn; ?></div>
+                                <g data-tooth="<?php echo $tn; ?>" transform="translate(<?php echo vToothCX($i); ?>,0)">
+                                    <?php echo vToothSVG(vToothType($tn), 'upper', $sel, $ts_info); ?>
+                                    <text x="0" y="10" text-anchor="middle" font-size="7.5" font-family="'Outfit',sans-serif" font-weight="600" fill="<?php echo $sel ? $ts_info['color'] : '#64748B'; ?>"><?php echo $tn; ?></text>
+                                </g>
                                 <?php endforeach; ?>
-                            </div>
-                            <!-- Primary upper -->
-                            <div style="display:flex;justify-content:center;gap:3px;margin-bottom:2px;">
-                                <?php foreach($primary_upper as $pt):
-                                    $sel = in_array($pt, $selected_teeth);
-                                ?>
-                                <div title="Primary <?php echo $pt; ?>" style="width:26px;height:26px;border-radius:50%;background:<?php echo $sel ? $ts_info['bg'] : 'var(--gray-100)'; ?>;border:1px solid <?php echo $sel ? $ts_info['border'] : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:<?php echo $sel ? $ts_info['color'] : 'var(--gray-500)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $pt; ?></div>
-                                <?php endforeach; ?>
-                            </div>
-                            <!-- Divider line -->
-                            <div style="border-top:2px dashed var(--gray-300);margin:4px 0;"></div>
-                            <!-- Primary lower -->
-                            <div style="display:flex;justify-content:center;gap:3px;margin-bottom:2px;">
-                                <?php foreach($primary_lower as $pt):
-                                    $sel = in_array($pt, $selected_teeth);
-                                ?>
-                                <div title="Primary <?php echo $pt; ?>" style="width:26px;height:26px;border-radius:50%;background:<?php echo $sel ? $ts_info['bg'] : 'var(--gray-100)'; ?>;border:1px solid <?php echo $sel ? $ts_info['border'] : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.55rem;color:<?php echo $sel ? $ts_info['color'] : 'var(--gray-500)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $pt; ?></div>
-                                <?php endforeach; ?>
-                            </div>
-                            <!-- Lower permanent -->
-                            <div style="display:flex;justify-content:center;gap:3px;">
-                                <?php foreach($lower as $tn):
+                                <line x1="320" y1="24" x2="320" y2="126" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="2 3" opacity="0.7"/>
+                                <rect x="0" y="66" width="640" height="16" fill="#F8FAFC" opacity="0.85"/>
+                                <line x1="8" y1="68" x2="632" y2="68" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="5 4"/>
+                                <line x1="8" y1="78" x2="632" y2="78" stroke="#CBD5E1" stroke-width="1.2" stroke-dasharray="5 4"/>
+                                <text x="320" y="76" text-anchor="middle" font-size="7.5" fill="#CBD5E1" font-family="'Outfit',sans-serif" font-weight="600" letter-spacing="2">GUM LINE</text>
+                                <?php foreach ($vLower as $i => $tn):
                                     $sel = in_array((string)$tn, $selected_teeth);
                                 ?>
-                                <div title="Tooth <?php echo $tn; ?>" style="width:30px;height:30px;border-radius:12px 12px 6px 6px;background:<?php echo $sel ? $ts_info['bg'] : 'var(--gray-200)'; ?>;border:1px solid <?php echo $sel ? $ts_info['border'] : 'var(--gray-300)'; ?>;display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:<?php echo $sel ? $ts_info['color'] : 'var(--gray-600)'; ?>;font-weight:600;flex-shrink:0;"><?php echo $tn; ?></div>
+                                <g data-tooth="<?php echo $tn; ?>" transform="translate(<?php echo vToothCX($i); ?>,0)">
+                                    <?php echo vToothSVG(vToothType($tn), 'lower', $sel, $ts_info); ?>
+                                    <text x="0" y="138" text-anchor="middle" font-size="7.5" font-family="'Outfit',sans-serif" font-weight="600" fill="<?php echo $sel ? $ts_info['color'] : '#64748B'; ?>"><?php echo $tn; ?></text>
+                                </g>
                                 <?php endforeach; ?>
+                                <text x="320" y="148" text-anchor="middle" font-size="8" fill="#94A3B8" font-family="'Outfit',sans-serif" font-weight="700" letter-spacing="1.5">LOWER JAW</text>
+                                <text x="155" y="10" text-anchor="middle" font-size="7" fill="#CBD5E1" font-family="'Outfit',sans-serif">← Patient Right</text>
+                                <text x="485" y="10" text-anchor="middle" font-size="7" fill="#CBD5E1" font-family="'Outfit',sans-serif">Patient Left →</text>
+                            </svg>
+                            </div>
+                            <!-- Primary / Deciduous teeth -->
+                            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--gray-200);">
+                                <div style="text-align:center;font-size:0.7rem;color:var(--gray-400);margin-bottom:7px;font-weight:600;letter-spacing:0.05em;">PRIMARY / DECIDUOUS TEETH</div>
+                                <div style="display:flex;justify-content:center;gap:4px;flex-wrap:wrap;">
+                                <?php foreach (array_merge($vPrimU, $vPrimL) as $pt):
+                                    $sel = in_array($pt, $selected_teeth);
+                                ?>
+                                <div title="Primary <?php echo $pt; ?>" style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:600;flex-shrink:0;background:<?php echo $sel ? $ts_info['bg'] : 'var(--gray-200)'; ?>;border:1px solid <?php echo $sel ? $ts_info['border'] : 'var(--gray-300)'; ?>;color:<?php echo $sel ? $ts_info['color'] : 'var(--gray-500)'; ?>;"><?php echo $pt; ?></div>
+                                <?php endforeach; ?>
+                                </div>
                             </div>
                             <!-- Legend -->
                             <div style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:0.65rem;color:var(--gray-400);">
+                                <?php if (!empty($selected_teeth)): ?>
                                 <span><span style="display:inline-block;width:8px;height:8px;background:<?php echo $ts_info['bg']; ?>;border:1px solid <?php echo $ts_info['border']; ?>;border-radius:2px;margin-right:3px;"></span><?php echo htmlspecialchars($ts_info['label']); ?></span>
-                                <span><span style="display:inline-block;width:8px;height:8px;background:var(--gray-200);border-radius:2px;margin-right:3px;"></span>Normal</span>
-                                <span><span style="display:inline-block;width:8px;height:8px;background:var(--gray-100);border-radius:50%;margin-right:3px;border:1px solid var(--gray-300);"></span>Primary</span>
+                                <?php endif; ?>
+                                <span><span style="display:inline-block;width:8px;height:8px;background:#E2E8F0;border:1px solid #94A3B8;border-radius:2px;margin-right:3px;"></span>Normal</span>
+                                <span><span style="display:inline-block;width:8px;height:8px;background:#E2E8F0;border:1px solid #94A3B8;border-radius:50%;margin-right:3px;"></span>Primary</span>
                             </div>
                         </div>
                     </div>
