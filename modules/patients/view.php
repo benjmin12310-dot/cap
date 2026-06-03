@@ -168,6 +168,46 @@ $total_paid = array_sum(array_column($payments, 'amount_paid'));
 }
 .pay-summary .amount { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
 .pay-summary .label  { font-size: 0.78rem; opacity: 0.8; margin-top: 2px; }
+
+/* ── Dark mode contrast fixes ─────────────────────────────── */
+[data-theme="dark"] .info-table th {
+    color: #94A3B8;
+}
+[data-theme="dark"] .info-table td {
+    color: #E2E8F0;
+}
+[data-theme="dark"] .info-table tr {
+    border-bottom-color: #1E293B;
+}
+[data-theme="dark"] .rec-toggle {
+    background: #1E293B;
+    color: #E2E8F0;
+}
+[data-theme="dark"] .rec-toggle:hover {
+    background: #263348;
+}
+[data-theme="dark"] .rec-toggle .rec-date {
+    color: #E2E8F0;
+}
+[data-theme="dark"] .rec-toggle .rec-svc {
+    color: #94A3B8;
+}
+[data-theme="dark"] .rec-body {
+    background: #0F172A;
+    border-top-color: #1E293B;
+}
+[data-theme="dark"] .rec-value {
+    color: #E2E8F0;
+}
+[data-theme="dark"] .rec-label {
+    color: #64748B;
+}
+[data-theme="dark"] .rec-accordion {
+    border-color: #1E293B;
+}
+[data-theme="dark"] .rec-item + .rec-item {
+    border-top-color: #1E293B;
+}
 </style>
 </head>
 <body>
@@ -189,7 +229,7 @@ $total_paid = array_sum(array_column($payments, 'amount_paid'));
                 <a href="../treatments/add.php?patient_id=<?php echo $id; ?>" class="btn btn-sm btn-success">
                     <i class="bi bi-journal-plus"></i> Add Record
                 </a>
-                <a href="../appointments/add.php?patient_id=<?php echo $id; ?>" class="btn btn-sm btn-primary">
+                <a href="../appointments/list.php?walkin=1&patient_id=<?php echo $id; ?>" class="btn btn-sm btn-primary">
                     <i class="bi bi-calendar-plus"></i> Book
                 </a>
                 <a href="list.php" class="btn btn-sm btn-outline-secondary">
