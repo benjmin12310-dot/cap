@@ -286,6 +286,18 @@ $primaryTeeth = ['55','54','53','52','51','61','62','63','64','65','85','84','83
     border-color: #3B82F6 !important;
     color: #fff !important;
 }
+/* ── Primary/deciduous teeth: visible color when selected ────── */
+.tooth-btn:not(svg g).s-selected,
+.tooth-btn:not(svg g).s-normal    { background: #BBF7D0 !important; border-color: #22C55E !important; color: #14532D !important; }
+.tooth-btn:not(svg g).s-caries    { background: #FDE68A !important; border-color: #F59E0B !important; color: #78350F !important; }
+.tooth-btn:not(svg g).s-filling   { background: #BFDBFE !important; border-color: #3B82F6 !important; color: #1E3A8A !important; }
+.tooth-btn:not(svg g).s-extraction{ background: #FECACA !important; border-color: #EF4444 !important; color: #7F1D1D !important; }
+.tooth-btn:not(svg g).s-missing   { background: #E5E7EB !important; border-color: #6B7280 !important; color: #1F2937 !important; }
+.tooth-btn:not(svg g).s-crown     { background: #DDD6FE !important; border-color: #7C3AED !important; color: #3B0764 !important; }
+.tooth-btn:not(svg g).s-rootcanal { background: #FFEDD5 !important; border-color: #F97316 !important; color: #7C2D12 !important; }
+.tooth-btn:not(svg g).s-bridge    { background: #CFFAFE !important; border-color: #06B6D4 !important; color: #164E63 !important; }
+.tooth-btn:not(svg g).s-implant   { background: #FCE7F3 !important; border-color: #EC4899 !important; color: #831843 !important; }
+.tooth-btn:not(svg g).s-denture   { background: #FEF3C7 !important; border-color: #D97706 !important; color: #78350F !important; }
 /* ── SVG static element theming ─────────────────── */
 .svg-label   { fill: #94A3B8; }
 .svg-quadrant { fill: #CBD5E1; }
